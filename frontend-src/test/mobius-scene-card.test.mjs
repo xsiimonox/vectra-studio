@@ -1,0 +1,391 @@
+/**
+ * Executes the ACTUAL built dist/vectra-studio-scene-card.js in a real jsdom
+ * DOM environment -- not a mock of the card's own logic, the real
+ * bundle a person's browser would load. Run with `npm test`.
+ */
+
+import { test, before } from "node:test";
+import assert from "node:assert/strict";
+import { JSDOM } from "jsdom";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const DIST_FILE = join(
+  HERE,
+  "..",
+  "..",
+  "custom_components",
+  "vectra_studio",
+  "frontend",
+  "dist",
+  "vectra-studio-scene-card.js",
+);
+
+let ctor;
+
+before(async () => {
+  const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
+    url: "http://localhost/",
+    runScripts: "dangerously",
+    pretendToBeVisual: true,
+  });
+  // Copy every enumerable global the jsdom window exposes, not a
+  // hand-picked subset -- lit's own bundled code references several
+  // DOM globals beyond the few obvious ones (Document, Node,
+  // Element...), and missing any one of them fails at import time
+  // with a confusing "X is not defined" that has nothing to do with
+  // the card itself.
+  for (const key of Object.getOwnPropertyNames(dom.window)) {
+    if (!(key in globalThis)) {
+      try {
+        globalThis[key] = dom.window[key];
+      } catch {
+        /* non-configurable global, skip */
+      }
+    }
+  }
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+
+  await import(DIST_FILE);
+  ctor = customElements.get("vectra-studio-scene-card");
+});
+
+function makeHass(state, options, durationRemaining, callServiceImpl) {
+  const calls = [];
+  return {
+    states: {
+      "select.reef_tank_scene_selection": {
+        entity_id: "select.reef_tank_scene_selection",
+        state,
+        attributes: { friendly_name: "Reef Tank Scene", options, duration_remaining_seconds: durationRemaining },
+      },
+    },
+    callService: async (domain, service, data) => {
+      calls.push({ domain, service, data });
+      if (callServiceImpl) return callServiceImpl(domain, service, data);
+    },
+    _calls: calls,
+  };
+}
+
+function makeCard(entity) {
+  const el = document.createElement("vectra-studio-scene-card");
+  el.setConfig({ entity });
+  document.body.appendChild(el);
+  return el;
+}
+
+test("registers as a custom element", () => {
+  assert.ok(ctor, "customElements.get('vectra-studio-scene-card') should return the class");
+});
+
+test("registers itself in window.customCards", () => {
+  const entry = window.customCards.find((c) => c.type === "vectra-studio-scene-card");
+  assert.ok(entry, "window.customCards should contain an entry for this card");
+});
+
+test("setConfig throws without an entity", () => {
+  const el = document.createElement("vectra-studio-scene-card");
+  assert.throws(() => el.setConfig({}), /entity/i);
+});
+
+test("setConfig accepts a valid entity", () => {
+  const el = document.createElement("vectra-studio-scene-card");
+  assert.doesNotThrow(() => el.setConfig({ entity: "select.reef_tank_scene_selection" }));
+});
+
+test("getStubConfig finds a scene entity from the entity list", () => {
+  const stub = ctor.getStubConfig(null, ["sensor.foo", "select.reef_tank_scene_selection", "select.other"]);
+  assert.equal(stub.entity, "select.reef_tank_scene_selection");
+});
+
+test("shows the normal-schedule message when no scene is active", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Feeding", "Storm Simulation"]);
+  await el.updateComplete;
+  assert.ok(el.shadowRoot.textContent.includes("Running the normal schedule"));
+  assert.equal(el.shadowRoot.querySelectorAll(".tile").length, 3);
+});
+
+test("marks the current option's own tile active", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Feeding"]);
+  await el.updateComplete;
+  const activeTiles = el.shadowRoot.querySelectorAll(".tile.active");
+  assert.equal(activeTiles.length, 1);
+  assert.ok(activeTiles[0].textContent.includes("Normal schedule"));
+});
+
+test("shows the active scene and its remaining duration", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("Feeding", ["None", "Feeding"], 125);
+  await el.updateComplete;
+  // textContent, not raw innerHTML -- Lit inserts its own internal
+  // comment markers between adjacent dynamic expressions (here,
+  // ${activeSceneName} and ${localize(...)} sit next to each other in
+  // the template), which would otherwise split "Feeding active" apart
+  // in the raw HTML string even though the actually-rendered text a
+  // person sees is unaffected.
+  const text = el.shadowRoot.textContent;
+  assert.ok(text.includes("Feeding active"));
+  assert.ok(text.includes("2:05 remaining"));
+});
+
+test("omits the duration line when the attribute is absent", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("Feeding", ["None", "Feeding"], undefined);
+  await el.updateComplete;
+  assert.ok(!el.shadowRoot.textContent.includes("remaining"));
+});
+
+test("shows a clear warning for a missing/renamed entity", async () => {
+  const el = makeCard("select.does_not_exist");
+  el.hass = makeHass("None", ["None"]);
+  await el.updateComplete;
+  const text = el.shadowRoot.textContent;
+  assert.ok(text.includes("Entity not found"));
+  assert.ok(text.includes("select.does_not_exist"));
+});
+
+test("clicking a tile calls select.select_option with the right option", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const hass = makeHass("None", ["None", "Feeding"]);
+  el.hass = hass;
+  await el.updateComplete;
+  const tiles = el.shadowRoot.querySelectorAll(".tile");
+  tiles[1].click(); // "Feeding"
+  assert.equal(hass._calls.length, 1);
+  assert.deepEqual(hass._calls[0], {
+    domain: "select",
+    service: "select_option",
+    data: { entity_id: "select.reef_tank_scene_selection", option: "Feeding" },
+  });
+});
+
+test("clicking the active tile still re-issues the same option (idempotent, not a no-op guard)", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const hass = makeHass("Feeding", ["None", "Feeding"]);
+  el.hass = hass;
+  await el.updateComplete;
+  const activeTile = el.shadowRoot.querySelector(".tile.active");
+  activeTile.click();
+  assert.equal(hass._calls[0].data.option, "Feeding");
+});
+
+test("getConfigForm restricts the entity selector to the select domain", () => {
+  const form = ctor.getConfigForm();
+  const entityField = form.schema.find((f) => f.name === "entity");
+  assert.ok(entityField, "schema should have an entity field");
+  assert.equal(entityField.required, true);
+  assert.equal(entityField.selector.entity.domain, "select");
+});
+
+test("getConfigForm's computeLabel/computeHelper return real strings for the entity field", () => {
+  const form = ctor.getConfigForm();
+  assert.equal(typeof form.computeLabel({ name: "entity" }), "string");
+  assert.equal(typeof form.computeHelper({ name: "entity" }), "string");
+});
+
+test("getGridOptions returns sensible sections-view defaults", () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const opts = el.getGridOptions();
+  assert.equal(typeof opts.rows, "number");
+  assert.equal(typeof opts.columns, "number");
+});
+
+test("localized strings respond to hass.locale.language (falls back to English for an unknown language)", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const hass = makeHass("None", ["None"]);
+  hass.locale = { language: "xx" }; // deliberately unsupported
+  el.hass = hass;
+  await el.updateComplete;
+  assert.ok(el.shadowRoot.textContent.includes("Running the normal schedule"));
+});
+
+// --------------------------------------------------------------------------
+// Remaining-time display: never a misleading "0:00 remaining" for a
+// scene with no actual timer (e.g. Feed Mode, confirmed via the app's
+// own "Exit Feed Mode" manual-exit string -- it runs until manually
+// stopped, not on a countdown).
+// --------------------------------------------------------------------------
+
+test("shows remaining time when duration is genuinely positive", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("Feed", ["None", "Feed"], 90);
+  await el.updateComplete;
+  assert.ok(el.shadowRoot.textContent.includes("remaining"));
+});
+
+test("does not show a misleading '0:00 remaining' when duration is exactly 0", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("Feed", ["None", "Feed"], 0);
+  await el.updateComplete;
+  assert.ok(!el.shadowRoot.textContent.includes("remaining"));
+});
+
+// --------------------------------------------------------------------------
+// Activation feedback -- a pending scene selection shows a spinner on
+// the specific tile, disables every tile until it resolves, and a
+// failure surfaces an actual error message rather than disappearing
+// silently.
+// --------------------------------------------------------------------------
+
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+test("clicking a tile shows a spinner on that tile and disables every tile while pending", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const { promise, resolve } = deferred();
+  el.hass = makeHass("None", ["None", "Feed"], undefined, () => promise);
+  await el.updateComplete;
+
+  const tiles = [...el.shadowRoot.querySelectorAll(".tile")];
+  const feedTile = tiles.find((t) => t.title === "Feed");
+  feedTile.click();
+  await el.updateComplete;
+
+  assert.ok(feedTile.querySelector("ha-icon.spin"));
+  for (const tile of el.shadowRoot.querySelectorAll(".tile")) {
+    assert.ok(tile.disabled);
+  }
+
+  resolve();
+  await promise;
+  await Promise.resolve();
+  await Promise.resolve();
+  await el.updateComplete;
+
+  assert.equal(el.shadowRoot.querySelector("ha-icon.spin"), null);
+  for (const tile of el.shadowRoot.querySelectorAll(".tile")) {
+    assert.ok(!tile.disabled);
+  }
+});
+
+test("clicking a second tile while one is already pending does nothing", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const { promise } = deferred();
+  el.hass = makeHass("None", ["None", "Feed", "Sunset"], undefined, () => promise);
+  await el.updateComplete;
+
+  const tiles = () => [...el.shadowRoot.querySelectorAll(".tile")];
+  tiles()
+    .find((t) => t.title === "Feed")
+    .click();
+  await el.updateComplete;
+  tiles()
+    .find((t) => t.title === "Sunset")
+    .click();
+  await el.updateComplete;
+
+  assert.equal(el.hass._calls.length, 1);
+  assert.equal(el.hass._calls[0].data.option, "Feed");
+});
+
+test("a failed activation shows an error message and clears the pending state", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Feed"], undefined, () => {
+    throw new Error("device returned FSCI status Failed");
+  });
+  await el.updateComplete;
+
+  el.shadowRoot.querySelector(".tile[title='Feed']").click();
+  await el.updateComplete;
+  // Let the rejected promise's own microtask settle.
+  await Promise.resolve();
+  await Promise.resolve();
+  await el.updateComplete;
+
+  assert.ok(el.shadowRoot.querySelector(".activation-error"));
+  assert.ok(el.shadowRoot.textContent.includes("device returned FSCI status Failed"));
+  assert.equal(el.shadowRoot.querySelector("ha-icon.spin"), null);
+});
+
+// --------------------------------------------------------------------------
+// Scene icons for the built-in scene types (per python-mobius's own
+// SceneID) that previously fell through to the generic bookmark
+// placeholder.
+// --------------------------------------------------------------------------
+
+test("Cloud Cover gets a cloud icon, not the generic placeholder", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Cloud Cover"]);
+  await el.updateComplete;
+
+  const tile = [...el.shadowRoot.querySelectorAll(".tile")].find((t) => t.title === "Cloud Cover");
+  assert.equal(tile.querySelector("ha-icon").getAttribute("icon"), "mdi:weather-cloudy");
+});
+
+test("Color Cycle gets a palette icon, not the generic placeholder", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Color Cycle"]);
+  await el.updateComplete;
+
+  const tile = [...el.shadowRoot.querySelectorAll(".tile")].find((t) => t.title === "Color Cycle");
+  assert.equal(tile.querySelector("ha-icon").getAttribute("icon"), "mdi:palette");
+});
+
+test("Disco gets a party-popper icon, not the generic placeholder", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Disco"]);
+  await el.updateComplete;
+
+  const tile = [...el.shadowRoot.querySelectorAll(".tile")].find((t) => t.title === "Disco");
+  assert.equal(tile.querySelector("ha-icon").getAttribute("icon"), "mdi:party-popper");
+});
+
+test("a genuinely unrecognized custom scene still falls back to the generic placeholder", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  el.hass = makeHass("None", ["None", "Photo Mode"]);
+  await el.updateComplete;
+
+  const tile = [...el.shadowRoot.querySelectorAll(".tile")].find((t) => t.title === "Photo Mode");
+  assert.equal(tile.querySelector("ha-icon").getAttribute("icon"), "mdi:bookmark-outline");
+});
+
+// --------------------------------------------------------------------------
+// Countdown: the remaining time is counted down from ends_at between polls.
+// --------------------------------------------------------------------------
+
+function remainingShown(el) {
+  const match = el.shadowRoot.textContent.match(/(\d+):(\d\d) remaining/);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : undefined;
+}
+
+test("counts the remaining time down from ends_at", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  try {
+    const hass = makeHass("Photo Mode", ["None", "Photo Mode"], 60);
+    hass.states["select.reef_tank_scene_selection"].attributes.ends_at = new Date(Date.now() + 60_000).toISOString();
+    el.hass = hass;
+    await el.updateComplete;
+    const first = remainingShown(el);
+    assert.ok(first >= 58 && first <= 60, `first reading ${first}`);
+
+    await new Promise((r) => setTimeout(r, 2100));
+    await el.updateComplete;
+    const second = remainingShown(el);
+    assert.ok(second < first, `second reading ${second} should be below ${first}`);
+  } finally {
+    el.remove();
+  }
+});
+
+test("stops counting once no scene is active", async () => {
+  const el = makeCard("select.reef_tank_scene_selection");
+  const active = makeHass("Photo Mode", ["None", "Photo Mode"], 60);
+  active.states["select.reef_tank_scene_selection"].attributes.ends_at = new Date(Date.now() + 60_000).toISOString();
+  el.hass = active;
+  await el.updateComplete;
+  el.hass = makeHass("None", ["None", "Photo Mode"]);
+  await el.updateComplete;
+  assert.equal(el._countdown._handle, undefined);
+  el.remove();
+});

@@ -1,0 +1,30 @@
+# ESPHome-Vorlage, Board und lokale Secrets vor dem Verwenden prüfen.
+esphome:
+  name: vectra-bluetooth-proxy
+  friendly_name: Vectra Bluetooth Proxy
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+bluetooth_proxy:
+  active: true

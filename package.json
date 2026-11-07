@@ -1,0 +1,9 @@
+{
+  "name": "vectra-studio-checks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check custom_components/vectra_studio/panel/vectra-studio.js"
+  }
+}

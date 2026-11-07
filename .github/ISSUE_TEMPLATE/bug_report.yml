@@ -1,0 +1,23 @@
+name: Fehler melden
+description: Problem mit Einrichtung, Pumpenstatus oder Bedienung
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem und Schritte zum Reproduzieren
+      description: Was passiert, und welches Verhalten erwartest du?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Umgebung
+      description: HA-Version, Vectra-Studio-Version, Pumpenmodell/Firmware und Bluetooth-Adapter oder Proxy.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Protokolle und Diagnose
+      description: Relevante Auszüge angeben; private Inhalte vorher entfernen.

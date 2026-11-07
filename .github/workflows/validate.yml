@@ -1,0 +1,35 @@
+name: Validate Vectra Studio
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend-src/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm --prefix frontend-src ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix frontend-src run typecheck
+      - run: npm --prefix frontend-src run build
+      - name: Editor tests
+        working-directory: frontend-src
+        run: node --test
+      - run: npm test
+      - run: npm run check
+      - run: python tools/validate_release.py --package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vectra-studio
+          path: dist/*.zip

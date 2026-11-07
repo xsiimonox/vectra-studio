@@ -1,0 +1,11 @@
+name: Funktion vorschlagen
+description: Bedienung oder Geräteunterstützung verbessern
+labels: [enhancement]
+body:
+  - type: textarea
+    id: request
+    attributes:
+      label: Gewünschte Funktion
+      description: Beschreibe den Anwendungsfall und die gewünschte Bedienung.
+    validations:
+      required: true

@@ -1,0 +1,41 @@
+name: Release Vectra Studio
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend-src/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm --prefix frontend-src ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix frontend-src run typecheck
+      - run: npm --prefix frontend-src run build
+      - name: Editor tests
+        working-directory: frontend-src
+        run: node --test
+      - run: npm test
+      - run: npm run check
+      - name: Validate tag and package
+        run: python tools/validate_release.py --package --tag "$GITHUB_REF_NAME"
+      - name: Publish experimental release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/vectra_studio.zip dist/vectra-studio-*.zip
+          --verify-tag --prerelease
+          --title "Vectra Studio $GITHUB_REF_NAME (experimentell)"
+          --notes-file CHANGELOG.md

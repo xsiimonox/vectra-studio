@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+node_modules/
+.venv/
+/dist/
+.DS_Store
+
+/downloads/
+.env
+.env.*
+secrets.yaml
+*.log
