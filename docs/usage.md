@@ -2,10 +2,35 @@
 
 [Zur Übersicht](../README.md)
 
-> **Sicherheitsmodus ab v0.3.1:** Vectra Studio zeigt Statuswerte, sendet aber
-> keine Szenen-, Pause- oder Zeitplan-Schreibbefehle. Die Steuerung der M2 muss
-> bis zu einer reproduzierbar getesteten Lösung über Mobius oder den Controller
-> erfolgen.
+## Konstantleistung ab v0.4.0
+
+In Mobius zuerst einen normalen ConstantSpeed-Zeitplan einrichten und Feed sowie
+Overrides beenden. Danach Mobius schließen und Vectra Studio aktivieren. Die
+neue Entität **Konstantleistung (aktueller Zeitplanblock)** akzeptiert ganze
+Prozentwerte von 1 bis 100. Im Studio den Wert eingeben und **Leistung übernehmen**
+betätigen. Auch `number.set_value` ist für Automationen verfügbar.
+
+Das ändert dauerhaft nur den zur aktuellen HA-Ortszeit aktiven Block in Schedule1.
+Bei einem ganztägig konstanten Programm ist dies die ganztägige Leistung. Weitere
+Blöcke und der nächste geplante Wechsel bleiben erhalten. HA und Pumpe müssen
+dieselbe Ortszeit verwenden. Der Wert ist ein Sollwert in Prozent, kein RPM- oder
+Liter-pro-Stunde-Regler.
+
+Vor jedem Versuch wird der ursprüngliche Zeitplan als ungepaddete Punktdaten in
+`/config/.storage/vectra_studio.schedule_backup_SERIENNUMMER` gesichert. Die letzte
+Sicherung ersetzt die vorherige; der alte Zeitplan sollte zusätzlich in Mobius
+aufbewahrt werden. Keine automatische Wiederherstellung: bei einem nicht bestätigten
+Versuch zuerst den Zustand in Mobius prüfen. Ein Fehler nach dem Schreiben bedeutet
+auch, dass der neue Zeitplan bereits gespeichert sein kann.
+
+Ein Erfolg erfordert identische zurückgelesene Punkte sowie gemeldete Motorleistung
+innerhalb ±1 Prozentpunkt im Schedule-Zustand. Bis zu fünf Statusabfragen erfolgen
+mit zwei Sekunden Abstand. `verification` an der NumberEntity zeigt das Ergebnis.
+Timeout oder Ablehnung enthält im Protokoll Seriennummer, Parameter und Sollwert.
+
+Die neue Implementierung ist automatisiert geprüft, aber noch nicht an einer echten
+M2 getestet. Szenen/Pause und die allgemeine Zeitplanbearbeitung sind weiterhin
+gesperrt. Die folgenden Abschnitte beschreiben zum Teil frühere Versionen.
 
 ## Status prüfen
 

@@ -82,14 +82,33 @@ test("pump selection resolves tank-wide metadata through its parent tank", async
   panel.remove();
 });
 
-test("read-only panel exposes telemetry but no pump control actions", async () => {
+test("without the M2 number entity telemetry remains available and scenes stay locked", async () => {
   const {panel, writes} = setup();
   await flush();
   assert.equal(panel.$("content").hidden, false);
   assert.equal(panel.$("speed").textContent, "45 %");
   assert.equal(panel.$("start"), null);
-  assert.match(panel.shadowRoot.textContent, /Steuerung vorübergehend gesperrt/);
+  assert.match(panel.shadowRoot.textContent, /Szenen und Pause gesperrt/);
   assert.deepEqual(writes, []);
+  panel.remove();
+});
+
+test("power control targets the selected device entity and reports failed verification", async () => {
+  const {panel, writes} = setup({callWS: async message => {
+    if (message.type === "config/device_registry/list") return devices;
+    if (message.type === "config/entity_registry/list") return [
+      {device_id: "other", platform: "vectra_studio", unique_id: "other_constant_speed_percent", entity_id: "number.other"},
+      {device_id: "m2", platform: "vectra_studio", unique_id: "123_constant_speed_percent", entity_id: "number.m2_power"}];
+    return {groups: [group]};
+  }});
+  await flush();
+  panel.$("power").value = "40";
+  await panel._applyPower();
+  assert.deepEqual(writes, [["number", "set_value", {entity_id: "number.m2_power", value: 40}]]);
+  panel._hass.callService = async () => { throw new Error("motor did not confirm"); };
+  await panel._applyPower();
+  assert.match(panel.$("power-result").textContent, /Nicht bestätigt: motor did not confirm/);
+  assert.equal(panel.$("apply-power").disabled, false);
   panel.remove();
 });
 

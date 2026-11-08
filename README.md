@@ -8,9 +8,9 @@
 Lokale Home-Assistant-Integration für EcoTech Vectra-Pumpen mit einer eigenen
 Oberfläche in der Seitenleiste: Pumpenstatus, Szenen und Tagesprogramme an einem Ort.
 
-**Sicherheitsmodus:** Ab Version 0.3.2 ist die Pumpensteuerung ausschließlich
-lesend. Szenen-, Pause- und Zeitplan-Schreibbefehle sind deaktiviert, bis sie
-mit einer Vectra M2 reproduzierbar geprüft wurden.
+**Experimentell ab 0.4.0:** Eine M2-Konstantleistungsentität ändert den aktuellen
+Zeitplanblock mit Sicherung, Rücklesen und Motorstatusprüfung. Ein Hardwaretest
+steht aus. Szenen, Pause und allgemeine Editor-Schreibbefehle bleiben gesperrt.
 Ein Laufzeittest auf Home Assistant und ein Hardwaretest mit der Vectra M2 stehen
 noch aus. Unterstützungsangaben sind keine Bestätigung für jede Firmware.
 
@@ -42,7 +42,7 @@ mit Home Assistant OS und Core 2026.10.1 vorgesehen.
 
 1. In HACS das Menü **Benutzerdefinierte Repositories / Custom repositories** öffnen.
 2. `https://github.com/xsiimonox/vectra-studio` als Typ **Integration** hinzufügen.
-3. **Vectra Studio** öffnen und die nummerierte Version **v0.3.2** oder neuer wählen.
+3. **Vectra Studio** öffnen und die nummerierte Version **v0.4.0** oder neuer wählen.
    Beta-Versionen müssen dafür nicht aktiviert werden.
 4. **Vectra Studio** herunterladen und Home Assistant neu starten.
 5. Die Mobius-App schließen. Einen bereits eingerichteten `ha-mobius`-Eintrag für

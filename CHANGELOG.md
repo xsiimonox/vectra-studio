@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.4.0
+
+- Neue M2-NumberEntity und Studio-Bedienung für 1–100 % Konstantleistung.
+  Ändert ausschließlich den aktuellen ConstantSpeed-Block in Schedule1;
+  sichert vorher den vollständigen Zeitplan in Home Assistants `.storage`.
+- Nutzt den gepaddeten Pumpen-Zeitplanwriter der Bibliothek, prüft Rücklesedaten
+  und fordert anschließend bis zu fünf aktuelle Statusabfragen an. Erfolg wird
+  nur bei passender Motorleistung (±1 Prozentpunkt) und Schedule-Zustand gemeldet.
+- Fehler enthalten Seriennummer, Parameter und angeforderten Wert. Keine
+  optimistische Erfolgsanzeige, keine automatische Rückkehr/ungeprüfter Rollback.
+- Feed, unbekannter/aktiver Override, andere Modelle und andere aktuelle Modi
+  werden vor dem Schreiben abgewiesen. Szenen und allgemeine Editor-Schreibwege
+  bleiben gesperrt. Neue Steuerung ist noch nicht an echter M2 getestet.
+
 ## 0.3.2
 
 - Die erwartete Bluetooth-Einschränkung bei einem Aquarium mit nur einer

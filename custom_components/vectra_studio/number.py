@@ -6,6 +6,7 @@ for every entry) and the battery settings of pumps that support them.
 from __future__ import annotations
 
 import logging
+import asyncio
 from datetime import timedelta
 
 from typing import Any, Optional
@@ -16,6 +17,9 @@ from homeassistant.components.number import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -24,6 +28,7 @@ from . import MobiusRuntimeData
 from .const import POLL_INTERVAL
 from .coordinator import MobiusDeviceCoordinator
 from .entity import async_add_device_entities, async_run_on_device, entry_tank_identifier
+from .vectra_control import set_constant_percent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,6 +92,72 @@ class PollIntervalNumber(RestoreNumber):
             "-- takes effect from each one's own next scheduled refresh",
             self._entry.title, seconds, len(runtime.coordinators),
         )
+
+
+class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], NumberEntity):
+    """Persistent setpoint of the active constant-speed block, not live RPM."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Konstantleistung (aktueller Zeitplanblock)"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 100
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_mode = NumberMode.BOX
+    _attr_icon = "mdi:pump"
+
+    def __init__(self, coordinator, serial, device_info):
+        super().__init__(coordinator)
+        self._serial = serial
+        self._attr_unique_id = f"{serial}_constant_speed_percent"
+        self._attr_device_info = device_info
+        self._lock = asyncio.Lock()
+        self._verification = "not_requested"
+
+    @property
+    def native_value(self):
+        data = self.coordinator.data or {}
+        if data.get("current_pump_mode") != "ConstantSpeed":
+            return None
+        value = data.get("current_pump_params", {}).get("MaxSpeed")
+        return value / 10 if isinstance(value, (int, float)) else None
+
+    @property
+    def extra_state_attributes(self):
+        return {"verification": self._verification,
+                "writes_to": "Schedule1: active ConstantSpeed block",
+                "backup_storage": f"vectra_studio.schedule_backup_{self._serial}"}
+
+    async def async_set_native_value(self, value):
+        async with self._lock:
+            async def backup(points):
+                # Save before sending; a storage failure prevents the write.
+                await Store(self.hass, 1, f"vectra_studio.schedule_backup_{self._serial}").async_save(
+                    {"serial": self._serial, "points_hex": [p.encode().hex() for p in points]})
+            self._verification = "pending"
+            try:
+                now = dt_util.now()
+                raw = await async_run_on_device(
+                    self.coordinator, lambda d: set_constant_percent(d, value, backup, now.hour * 60 + now.minute),
+                    f"MaxSpeed={value!r}% on {self._serial}")
+                self._verification = "schedule_verified_live_pending"
+                for attempt in range(5):
+                    await self.coordinator.async_request_refresh()
+                    data = self.coordinator.data or {}
+                    speed = (data.get("telemetry") or {}).get("speed_percent")
+                    if (self.coordinator.last_update_success and data.get("operation_state") == "Schedule"
+                            and speed is not None and abs(speed - raw / 10) <= 1):
+                        self._verification = "schedule_and_motor_verified"
+                        return
+                    if attempt < 4:
+                        await asyncio.sleep(2)
+                raise HomeAssistantError("MaxSpeed: schedule stored, but motor/state did not confirm the requested percentage; inspect Mobius")
+            except Exception as err:
+                self._verification = "failed_or_unconfirmed"
+                _LOGGER.error("Vectra %s MaxSpeed=%r%% failed: %s", self._serial, value, err)
+                raise HomeAssistantError(str(err)) from err
+            finally:
+                self.async_write_ha_state()
 
 
 class _PumpBatteryNumber(CoordinatorEntity[MobiusDeviceCoordinator], NumberEntity):
@@ -221,6 +292,8 @@ def _build_pump_battery_numbers(coordinator, serial, device_info, data) -> list[
     """Battery entities for a pump that reports the settings. Like the
     switches and selects, they're created at setup only."""
     entities: list[NumberEntity] = []
+    if data.get("model") == "VectraM2" and data.get("primitive_type") == "VectraV1":
+        entities.append(VectraConstantSpeedNumber(coordinator, serial, device_info))
     if data.get("battery_backup"):
         entities.append(BatteryBackupSpeedNumber(coordinator, serial, device_info))
     if data.get("boosted_battery"):

@@ -2,7 +2,7 @@
 // The panel itself is versioned by panel.py. Version the static dependency too:
 // otherwise Safari may combine a new panel with an old cached model.js and fail
 // module evaluation before it can render anything.
-import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.3.2";
+import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.4.0";
 
 class VectraStudioPanel extends HTMLElement {
   constructor() {
@@ -28,19 +28,21 @@ class VectraStudioPanel extends HTMLElement {
         #message{white-space:pre-wrap;padding:16px;border-radius:12px;background:var(--card-background-color,#fff);margin:16px 0;border:1px solid var(--divider-color,#d4e0e2)}#message.error{border-color:var(--error-color,#c44)}[hidden]{display:none!important}#editor{margin-top:20px}footer{font-size:12px;line-height:1.7;color:var(--secondary-text-color,#667d82);margin-top:28px} .empty{padding:35px 0;max-width:650px}
         @media(max-width:650px){main{padding:24px 16px}.metrics{grid-template-columns:1fr}.metric{padding:18px}.value{font-size:26px}header{padding:12px}.tag{display:none}.fields{grid-template-columns:1fr}.studio-item{align-items:flex-start;flex-wrap:wrap}.studio-item button{margin-left:0}}
       </style>
-      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Lesemodus · 0.3.2</span></header>
+      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.4.0</span></header>
       <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status deiner Vectra an einem Ort.</p>
         <div class="toolbar"><label>Pumpe<select id="device" aria-label="Pumpe auswählen"></select></label><button id="refresh">Geräte neu laden</button></div>
         <div id="message" role="status" aria-live="polite" hidden></div>
         <section id="empty" class="empty" hidden><h2>Noch keine Vectra gefunden</h2><p>Füge unter Einstellungen → Geräte & Dienste eine Vectra über die Integration „Vectra Studio“ hinzu. Schließe die Mobius-App und prüfe den Bluetooth-Empfang am Pumpencontroller. Lade anschließend die Geräte hier neu.</p></section>
         <section id="content" hidden>
+          <div class="box"><h2>Konstantleistung</h2><p>Ändert dauerhaft den aktuellen ConstantSpeed-Zeitplanblock (1–100 %, ganze Schritte). Andere Blöcke bleiben erhalten. Feed und Controller-Overrides vorher in Mobius beenden. Der Sollwert ist keine Durchflussmessung.</p><input id="power" type="number" min="1" max="100" step="1" aria-label="Konstantleistung in Prozent"><button id="apply-power" disabled>Leistung übernehmen</button><p id="power-result" role="status"></p></div>
           <div class="metrics"><div class="metric"><small>Motordrehzahl</small><div class="value" id="speed">—</div></div><div class="metric"><small>Geschätzter Durchfluss</small><div class="value" id="flow">—</div></div><div class="metric"><small>Aktueller Modus</small><div class="value" id="mode">—</div></div></div>
-          <div class="box"><h2>Steuerung vorübergehend gesperrt</h2><p>Die Szenen-, Pause- und Zeitplan-Schreibfunktionen sind nach einem Hardwarebefund deaktiviert: Die M2 übernahm Werte nicht zuverlässig und konnte nach dem Beenden einer Szene in einem nicht startenden Controllerzustand bleiben. Steuere die Pumpe bitte ausschließlich über die Mobius-App oder direkt am Controller, bis eine mit einer Vectra M2 geprüfte Implementierung vorliegt.</p></div>
+          <div class="box"><h2>Szenen und Pause gesperrt</h2><p>Die neue Prozentsteuerung prüft den gespeicherten Zeitplan und die gemeldete Motorleistung. Szenenwechsel und automatische Rückkehr bleiben wegen des gemeldeten Controllerverhaltens gesperrt. Ein Hardwaretest der neuen Prozentsteuerung steht noch aus.</p></div>
         </section>
         <footer>Vectra Studio · Unabhängiges Projekt auf Basis von ha-mobius und python-mobius.<br>Ein fehlender Durchflusswert wird nicht aus der Drehzahl berechnet. Geräteunterstützung und Verbindung müssen an deiner Pumpe geprüft werden.</footer>
       </main>`;
     this.$("refresh").onclick = () => this._load();
     this.$("device").onchange = () => this._choose(this.$("device").value);
+    this.$("apply-power").onclick = () => this._applyPower();
   }
 
   $(id) { return this.shadowRoot.getElementById(id); }
@@ -135,6 +137,12 @@ class VectraStudioPanel extends HTMLElement {
       this._group = pumpGroup(result.groups, deviceId);
       if (!this._group) throw new Error("Die Pumpe meldet noch keine unterstützten Zeitplandaten. Prüfe die Diagnose der Integration und lade die Geräte erneut.");
       this._member = this._group.members.find(m => m.device_id === deviceId);
+      const entities = await this._hass.callWS({type: "config/entity_registry/list"});
+      if (token !== this._selection) return;
+      this._powerEntity = Array.isArray(entities) ? entities.find(e => e.device_id === deviceId &&
+        e.platform === "vectra_studio" && e.unique_id?.endsWith("_constant_speed_percent") && !e.disabled_by)?.entity_id : null;
+      this.$("apply-power").disabled = !this._powerEntity;
+      this.$("power-result").textContent = this._powerEntity ? "Bereit für einen geprüften Schreibversuch." : "Leistungsentität noch nicht verfügbar. Integration aktualisieren und Geräte neu laden.";
       this.$("content").hidden = false;
       this._message("");
       this._updateLive();
@@ -147,6 +155,28 @@ class VectraStudioPanel extends HTMLElement {
     const states = this._hass.states;
     for (const [id, key] of [["speed", "speed_entity_id"], ["flow", "flow_entity_id"], ["mode", "mode_entity_id"]]) {
       this.$(id).textContent = displayState(states, this._member[key]);
+    }
+  }
+  async _applyPower() {
+    if (!this._powerEntity || this._busy) return;
+    const value = Number(this.$("power").value);
+    if (!Number.isInteger(value) || value < 1 || value > 100) {
+      this.$("power-result").textContent = "Bitte eine ganze Prozentzahl zwischen 1 und 100 eingeben.";
+      return;
+    }
+    this._busy = true;
+    this.$("apply-power").disabled = true;
+    this.$("device").disabled = true;
+    this.$("power-result").textContent = "Schreiben und Rücklesen werden geprüft …";
+    try {
+      await this._hass.callService("number", "set_value", {entity_id: this._powerEntity, value});
+      this.$("power-result").textContent = "Zeitplan und gemeldete Motorleistung bestätigt.";
+    } catch (err) {
+      this.$("power-result").textContent = `Nicht bestätigt: ${err.message || err}`;
+    } finally {
+      this._busy = false;
+      this.$("apply-power").disabled = !this._powerEntity;
+      this.$("device").disabled = false;
     }
   }
   async _scene(option) {
