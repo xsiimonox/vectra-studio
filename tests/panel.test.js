@@ -8,7 +8,7 @@ const dom = new JSDOM("<!doctype html><html><body></body></html>", {url: "http:/
 for (const name of ["window", "document", "HTMLElement", "customElements"]) globalThis[name] = dom.window[name];
 await import("../custom_components/vectra_studio/panel/vectra-studio.js");
 const flush = () => new Promise(resolve => setImmediate(resolve));
-const devices = [{id: "m2", model: "VectraM2", name_by_user: "<img src=x onerror=alert(1)>", identifiers: [["vectra_studio", "123"]]}];
+const devices = [{id: "m2", via_device_id: "tank", model: "VectraM2", name_by_user: "<img src=x onerror=alert(1)>", identifiers: [["vectra_studio", "123"]]}];
 const group = {kind: "pump", scene_entity_id: "select.scene", members: [{device_id: "m2", speed_entity_id: "sensor.speed", flow_entity_id: null, mode_entity_id: "sensor.mode"}]};
 
 function setup(overrides = {}) {
@@ -68,7 +68,8 @@ test("late metadata from a previously selected pump cannot replace current selec
   const {panel} = setup();
   await flush();
   let finishOld;
-  panel._hass.callWS = async message => message.device_id === "old"
+  panel._devices.push({...devices[0], id: "old", via_device_id: "old-tank"});
+  panel._hass.callWS = async message => message.device_id === "old-tank"
     ? await new Promise(resolve => {finishOld = resolve;}) : {groups: [group]};
   const oldRequest = panel._choose("old");
   await panel._choose("m2");
@@ -76,5 +77,29 @@ test("late metadata from a previously selected pump cannot replace current selec
   await oldRequest;
   assert.equal(panel._member.device_id, "m2");
   assert.equal(panel.$("content").hidden, false);
+  panel.remove();
+});
+
+test("pump selection resolves tank-wide metadata through its parent tank", async () => {
+  const calls = [];
+  const {panel} = setup({callWS: async message => {
+    calls.push(message);
+    return message.type === "config/device_registry/list" ? devices : {groups: [group]};
+  }});
+  await flush();
+  assert.deepEqual(calls[1], {type: "vectra_studio/resolve_schedule_groups", device_id: "tank"});
+  panel.remove();
+});
+
+test("a pump without a tank relationship explains the setup issue without calling the backend", async () => {
+  const calls = [];
+  const orphan = [{...devices[0], via_device_id: null}];
+  const {panel} = setup({callWS: async message => {
+    calls.push(message);
+    return orphan;
+  }});
+  await flush();
+  assert.match(panel.$("message").textContent, /keinem Aquarium-Gerät zugeordnet/);
+  assert.equal(calls.length, 1);
   panel.remove();
 });

@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.1.3
+
+- Studio lädt Zeitplan- und Szenenmetadaten über das zugehörige Aquarium statt
+  über die einzelne Pumpe; behebt „device_id … is not a Tank device“.
+- Verständliche Meldung, wenn Home Assistant die Pumpenbeziehung zum Aquarium
+  noch nicht angelegt hat.
+
 ## Noch nicht veröffentlicht
 
 - Release-Workflow veröffentlicht nummerierte Versionen regulär statt ausschließlich

@@ -79,6 +79,19 @@ Den Eintrag aus der Seitenleiste neu öffnen. Die richtige URL endet jetzt auf
 `/vectra-studio`, nicht auf `/vectra-studio-panel`. Die Pumpe muss dafür nicht
 gelöscht oder erneut eingerichtet werden.
 
+## „device_id … is not a Tank device“
+
+Versionen bis 0.1.2 übergaben beim Laden der Studio-Oberfläche die Pumpe an
+einen Zeitplan-Endpunkt, der das zugehörige Aquarium erwartet. Version **0.1.3**
+ermittelt die Aquarium-ID aus der Gerätebeziehung und behält anschließend trotzdem
+die ausgewählte Pumpe bei.
+
+In HACS die Informationen aktualisieren, Version 0.1.3 oder neuer herunterladen
+und Home Assistant vollständig neu starten. Die vorhandene Pumpeneinrichtung bleibt
+erhalten. Falls danach die Meldung erscheint, dass die Pumpe keinem Aquarium-Gerät
+zugeordnet ist, die Vectra-Studio-Integration einmal neu laden und die Diagnose der
+Integration herunterladen.
+
 ## Seitenleiste fehlt oder Editor lädt nicht
 
 Als Administrator anmelden und Browser neu laden. Prüfen, dass auch `panel/` und
