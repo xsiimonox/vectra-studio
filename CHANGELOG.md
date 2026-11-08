@@ -1,6 +1,6 @@
 # Änderungen
 
-## 0.3.0
+## 0.3.1
 
 - Sicherheitsmodus: Szenen, Pause und Zeitplan-Schreibbefehle sind wegen eines
   gemeldeten, nicht reproduzierbar verifizierten Vectra-M2-Hardwareverhaltens

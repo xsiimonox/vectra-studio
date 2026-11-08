@@ -5,7 +5,7 @@ import {readFile} from "node:fs/promises";
 
 test("panel versions its model dependency to prevent a stale browser-cache import", async () => {
   const panel = await readFile(new URL("../custom_components/vectra_studio/panel/vectra-studio.js", import.meta.url), "utf8");
-  assert.match(panel, /from "\.\/model\.js\?v=0\.3\.0"/);
+  assert.match(panel, /from "\.\/model\.js\?v=0\.3\.1"/);
 });
 
 test("only configured, enabled Vectra devices belong in the pump selector", () => {

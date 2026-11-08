@@ -2,7 +2,7 @@
 
 [Zur Übersicht](../README.md)
 
-> **Sicherheitsmodus ab v0.3.0:** Vectra Studio zeigt Statuswerte, sendet aber
+> **Sicherheitsmodus ab v0.3.1:** Vectra Studio zeigt Statuswerte, sendet aber
 > keine Szenen-, Pause- oder Zeitplan-Schreibbefehle. Die Steuerung der M2 muss
 > bis zu einer reproduzierbar getesteten Lösung über Mobius oder den Controller
 > erfolgen.

@@ -29,10 +29,10 @@ class HacsDistributionTests(unittest.TestCase):
                 self.assertTrue((COMPONENT / relative).is_file())
                 self.assertGreater((COMPONENT / relative).stat().st_size, 0)
 
-    def test_panel_import_uses_current_release_version(self):
+    def test_panel_static_import_uses_current_release_version(self):
         manifest = json.loads((COMPONENT / "manifest.json").read_text())
         panel = (COMPONENT / "panel/vectra-studio.js").read_text()
-        self.assertIn(f"schedule-card.js?v={manifest['version']}", panel)
+        self.assertIn(f"model.js?v={manifest['version']}", panel)
 
 
 if __name__ == "__main__":
