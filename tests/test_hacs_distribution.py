@@ -34,6 +34,12 @@ class HacsDistributionTests(unittest.TestCase):
         panel = (COMPONENT / "panel/vectra-studio.js").read_text()
         self.assertIn(f"model.js?v={manifest['version']}", panel)
 
+    def test_single_device_warning_is_not_a_persistent_notification(self):
+        source = (COMPONENT / "__init__.py").read_text()
+        start = source.index("def _notify_single_device_tank")
+        end = source.index("def _dismiss_single_device_notification")
+        self.assertNotIn("persistent_notification.async_create", source[start:end])
+
 
 if __name__ == "__main__":
     unittest.main()

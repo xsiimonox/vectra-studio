@@ -139,35 +139,21 @@ def _single_device_notification_id(entry: ConfigEntry) -> str:
 
 
 def _notify_single_device_tank(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """
-    Posts a notification while a tank has exactly one device.
+    """Log, but do not repeatedly notify, about an app limitation.
 
-    The integration keeps a Bluetooth connection to one device of each tank
-    (the gateway) and reaches the others through it. A connected device
-    can't be reached by the Mobius app, so with a single device the app
-    can't control it at all until this entry is disabled. With more
-    devices the app can still use the others.
-
-    Posted on every setup (so it comes back after a restart or a reload
-    even if it was dismissed), and dismissed when the entry is unloaded or
-    the tank gains a second device.
+    A one-device Mobius tank needs the integration's single BLE connection,
+    which prevents parallel control by the Mobius app. This is expected
+    configuration information, not a fault requiring a persistent alert.
+    Dismiss the notification id used by older releases so it disappears on
+    the next reload as well.
     """
     if len(entry.data.get(CONF_DEVICES, [])) != 1:
         _dismiss_single_device_notification(hass, entry)
         return
-    persistent_notification.async_create(
-        hass,
-        title=f"Vectra Studio: only one device in {entry.title}",
-        message=(
-            f"Mobius keeps a Bluetooth connection to one device of each tank, so the tank's other "
-            f"devices can be reached through it. {entry.title} has only one device, so the Mobius "
-            f"app can't connect to it while this integration is running.\n\n"
-            f"To use the app with this device, disable this Vectra Studio entry "
-            f"(Settings > Devices & services > Vectra Studio > the entry's menu > Disable) and enable it "
-            f"again afterwards. Adding another device of the same tank also solves it: the app can "
-            f"then use whichever device Mobius isn't connected to."
-        ),
-        notification_id=_single_device_notification_id(entry),
+    _dismiss_single_device_notification(hass, entry)
+    _LOGGER.info(
+        "%s has one device; the Mobius app cannot connect while Vectra Studio owns its Bluetooth connection",
+        entry.title,
     )
 
 

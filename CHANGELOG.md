@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.3.2
+
+- Die erwartete Bluetooth-Einschränkung bei einem Aquarium mit nur einer
+  Vectra erzeugt keine dauerhafte Home-Assistant-Benachrichtigung mehr.
+  Bereits vorhandene Meldungen werden beim nächsten Laden der Integration
+  entfernt; der Hinweis bleibt als Protokolleintrag erhalten.
+
 ## 0.3.1
 
 - Sicherheitsmodus: Szenen, Pause und Zeitplan-Schreibbefehle sind wegen eines
