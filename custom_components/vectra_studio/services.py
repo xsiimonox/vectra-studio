@@ -170,6 +170,10 @@ async def async_handle_write_schedule_group(hass: HomeAssistant, call: ServiceCa
     """Writes Schedule1 to the target and, for a light, every other light
     in its schedule group (never to only part of a group). Schedule2 isn't
     supported yet."""
+    raise HomeAssistantError(
+        "Vectra schedule writes are temporarily disabled after an unverified "
+        "Vectra M2 hardware result. Use the Mobius app or the controller."
+    )
     points_dict = call.data["points"]
     _target_serial, target_coordinator, support, members = await _resolve_group(hass, call.data["device_id"])
 
@@ -211,6 +215,10 @@ async def async_handle_set_schedule_intensity(hass: HomeAssistant, call: Service
     06-light-schedule.md) to the target light and every light in its
     schedule group. `intensity` is 0-100 percent. Rejected for pumps.
     """
+    raise HomeAssistantError(
+        "Vectra schedule writes are temporarily disabled after an unverified "
+        "Vectra M2 hardware result. Use the Mobius app or the controller."
+    )
     target_serial, _coordinator, support, members = await _resolve_group(hass, call.data["device_id"])
     if support != "light":
         raise HomeAssistantError(

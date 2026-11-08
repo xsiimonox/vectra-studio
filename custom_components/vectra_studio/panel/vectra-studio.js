@@ -2,7 +2,7 @@
 // The panel itself is versioned by panel.py. Version the static dependency too:
 // otherwise Safari may combine a new panel with an old cached model.js and fail
 // module evaluation before it can render anything.
-import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.2.2";
+import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.3.0";
 
 class VectraStudioPanel extends HTMLElement {
   constructor() {
@@ -28,29 +28,19 @@ class VectraStudioPanel extends HTMLElement {
         #message{white-space:pre-wrap;padding:16px;border-radius:12px;background:var(--card-background-color,#fff);margin:16px 0;border:1px solid var(--divider-color,#d4e0e2)}#message.error{border-color:var(--error-color,#c44)}[hidden]{display:none!important}#editor{margin-top:20px}footer{font-size:12px;line-height:1.7;color:var(--secondary-text-color,#667d82);margin-top:28px} .empty{padding:35px 0;max-width:650px}
         @media(max-width:650px){main{padding:24px 16px}.metrics{grid-template-columns:1fr}.metric{padding:18px}.value{font-size:26px}header{padding:12px}.tag{display:none}.fields{grid-template-columns:1fr}.studio-item{align-items:flex-start;flex-wrap:wrap}.studio-item button{margin-left:0}}
       </style>
-      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.2.2</span></header>
-      <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status, Szenen und Tagesprogramm deiner Vectra an einem Ort.</p>
+      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Lesemodus · 0.3.0</span></header>
+      <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status deiner Vectra an einem Ort.</p>
         <div class="toolbar"><label>Pumpe<select id="device" aria-label="Pumpe auswählen"></select></label><button id="refresh">Geräte neu laden</button></div>
         <div id="message" role="status" aria-live="polite" hidden></div>
         <section id="empty" class="empty" hidden><h2>Noch keine Vectra gefunden</h2><p>Füge unter Einstellungen → Geräte & Dienste eine Vectra über die Integration „Vectra Studio“ hinzu. Schließe die Mobius-App und prüfe den Bluetooth-Empfang am Pumpencontroller. Lade anschließend die Geräte hier neu.</p></section>
         <section id="content" hidden>
           <div class="metrics"><div class="metric"><small>Motordrehzahl</small><div class="value" id="speed">—</div></div><div class="metric"><small>Geschätzter Durchfluss</small><div class="value" id="flow">—</div></div><div class="metric"><small>Aktueller Modus</small><div class="value" id="mode">—</div></div></div>
-          <div class="box"><h2>Szenen am Aquarium</h2><p>Starte eine in Mobius konfigurierte Szene oder kehre zum Tagesprogramm zurück. Die Auswahl wirkt auf die Geräte desselben Aquariums, auf denen diese Szene eingerichtet ist.</p><div class="actions"><select id="scene" aria-label="Szene auswählen"></select><button id="start" class="primary">Szene starten</button><button id="resume">Zum Tagesprogramm</button></div><p id="active"></p></div>
-          <div class="box"><h2>Studio-Szenen & Pause</h2><p>Studio-Szenen geben einer in Mobius eingerichteten Szene einen eigenen Namen und eine Rückkehrzeit. „Unbegrenzt“ kehrt erst mit <em>Zum Tagesprogramm</em> zurück. Die Pause startet eine von dir gewählte Mobius-Szene; sie schaltet die Rückförderpumpe nicht hart aus.</p><div class="fields"><label>Name<input id="studio-name" maxlength="80" placeholder="z. B. Wartung"></label><label>Mobius-Szene<select id="studio-source"></select></label><label class="check"><input id="studio-infinite" type="checkbox">Unbegrenzt</label></div><div class="fields"><label>Rückkehr nach (Min.)<input id="studio-minutes" type="number" min="1" max="10080" value="30"></label><span></span><button id="studio-save">Szene speichern</button></div><div id="studio-scenes" class="studio-list"></div><hr><h3>Pause</h3><p>Wähle die für Pause oder Wartung konfigurierte Mobius-Szene und die gewünschte Dauer.</p><div class="fields"><label>Mobius-Szene<select id="pause-source"></select></label><label>Pause (Min.)<input id="pause-minutes" type="number" min="1" max="10080" value="15"></label><label class="check"><input id="pause-infinite" type="checkbox">Unbegrenzt</label></div><div class="actions"><button id="pause" class="primary">Pause starten</button><button id="studio-resume">Pause/Szene beenden</button></div><p id="studio-active" class="active-scene"></p></div>
-          <div class="box"><h2>Dein Tagesprogramm</h2><p>Der integrierte Mobius-Editor liest das Programm von der Pumpe. Änderungen werden erst beim Speichern übernommen. Exportiere vorher eine Sicherung; die Mobius-App übernimmt Änderungen nicht automatisch.</p><button id="open">Zeitplan-Editor öffnen</button><div id="editor"></div></div>
+          <div class="box"><h2>Steuerung vorübergehend gesperrt</h2><p>Die Szenen-, Pause- und Zeitplan-Schreibfunktionen sind nach einem Hardwarebefund deaktiviert: Die M2 übernahm Werte nicht zuverlässig und konnte nach dem Beenden einer Szene in einem nicht startenden Controllerzustand bleiben. Steuere die Pumpe bitte ausschließlich über die Mobius-App oder direkt am Controller, bis eine mit einer Vectra M2 geprüfte Implementierung vorliegt.</p></div>
         </section>
         <footer>Vectra Studio · Unabhängiges Projekt auf Basis von ha-mobius und python-mobius.<br>Ein fehlender Durchflusswert wird nicht aus der Drehzahl berechnet. Geräteunterstützung und Verbindung müssen an deiner Pumpe geprüft werden.</footer>
       </main>`;
     this.$("refresh").onclick = () => this._load();
     this.$("device").onchange = () => this._choose(this.$("device").value);
-    this.$("start").onclick = () => this._scene(this.$("scene").value);
-    this.$("resume").onclick = () => this._scene("None");
-    this.$("open").onclick = () => this._openEditor();
-    this.$("studio-save").onclick = () => this._saveStudioScene();
-    this.$("pause").onclick = () => this._startPause();
-    this.$("studio-resume").onclick = () => this._resumeStudioScene();
-    this.$("studio-infinite").onchange = () => this._toggleDuration("studio");
-    this.$("pause-infinite").onchange = () => this._toggleDuration("pause");
   }
 
   $(id) { return this.shadowRoot.getElementById(id); }
@@ -120,8 +110,6 @@ class VectraStudioPanel extends HTMLElement {
   }
   _clearEditor() {
     this._card = null;
-    this.$("editor").replaceChildren();
-    this.$("open").hidden = false;
   }
   async _choose(deviceId) {
     const token = ++this._selection;
@@ -150,10 +138,6 @@ class VectraStudioPanel extends HTMLElement {
       this.$("content").hidden = false;
       this._message("");
       this._updateLive();
-      // The optional Studio-scene store must never hide live telemetry and
-      // normal Mobius controls when HA has not reloaded its new websocket
-      // handlers yet (for example immediately after a HACS update).
-      await this._loadStudioScenes(token);
     } catch (err) {
       if (token === this._selection) this._message(err.message || String(err), true);
     }
@@ -164,31 +148,6 @@ class VectraStudioPanel extends HTMLElement {
     for (const [id, key] of [["speed", "speed_entity_id"], ["flow", "flow_entity_id"], ["mode", "mode_entity_id"]]) {
       this.$(id).textContent = displayState(states, this._member[key]);
     }
-    const sceneId = this._group.scene_entity_id;
-    const options = sceneOptions(states, sceneId);
-    const select = this.$("scene");
-    const signature = JSON.stringify(options);
-    if (signature !== this._sceneSignature) {
-      this._sceneSignature = signature;
-      const selected = select.value;
-      select.replaceChildren(...options.map(name => {
-        const option = document.createElement("option");
-        option.value = name; option.textContent = name; return option;
-      }));
-      if (!options.length) {
-        const option = document.createElement("option");
-        option.textContent = "Keine Szene eingerichtet"; option.value = ""; select.append(option);
-      } else if (options.includes(selected)) select.value = selected;
-    }
-    const state = states[sceneId];
-    const available = state && !["unknown", "unavailable"].includes(state.state);
-    this.$("start").disabled = this._busy || !available || !options.length;
-    this.$("scene").disabled = this._busy || !options.length;
-    this.$("resume").disabled = this._busy || !available;
-    this.$("active").textContent = !available ? "Szenenstatus derzeit nicht verfügbar." :
-      state.state === "None" ? "Das Tagesprogramm ist aktiv." : `Aktive Szene: ${state.state}`;
-    this._setSourceOptions(options);
-    this._renderStudioScenes();
   }
   async _scene(option) {
     if (this._busy || !option || !this._group?.scene_entity_id) return;

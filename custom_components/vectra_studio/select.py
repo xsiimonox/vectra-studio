@@ -161,6 +161,10 @@ class SceneSelectionSelect(SelectEntity):
         return None
 
     async def async_select_option(self, option: str) -> None:
+        raise HomeAssistantError(
+            "Vectra scene control is temporarily disabled after an unverified "
+            "Vectra M2 hardware result. Use the Mobius app or the controller."
+        )
         runtime: MobiusRuntimeData = self._entry.runtime_data
 
         if option == self.NONE_OPTION:

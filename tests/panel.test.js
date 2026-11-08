@@ -46,20 +46,6 @@ test("initial load is read-only; live values and device labels are rendered safe
   panel.remove();
 });
 
-test("scene writes use the selected tank entity and expose failures", async () => {
-  const {panel, writes} = setup();
-  await flush();
-  await panel._scene("Feed");
-  assert.deepEqual(writes, [["select", "select_option", {entity_id: "select.scene", option: "Feed"}]]);
-  assert.equal(panel.$("active").textContent, "Das Tagesprogramm ist aktiv."); // no optimistic state
-  panel._hass.callService = async () => { throw new Error("Bluetooth getrennt"); };
-  await panel._scene("None");
-  assert.match(panel.$("message").textContent, /Bluetooth getrennt/);
-  assert.equal(panel.$("message").classList.contains("error"), true);
-  assert.equal(panel.$("device").disabled, false);
-  panel.remove();
-});
-
 test("empty setup offers installation instructions without imaginary telemetry", async () => {
   const {panel, writes} = setup({callWS: async () => []});
   await flush();
@@ -93,62 +79,17 @@ test("pump selection resolves tank-wide metadata through its parent tank", async
   }});
   await flush();
   assert.deepEqual(calls[1], {type: "vectra_studio/resolve_schedule_groups", device_id: "tank"});
-  assert.deepEqual(calls[2], {type: "vectra_studio/studio_scene_list", tank_device_id: "tank"});
   panel.remove();
 });
 
-test("Studio scenes save a configured Mobius scene with a finite return timer", async () => {
-  const calls = [];
-  const {panel} = setup({callWS: async message => {
-    calls.push(message);
-    if (message.type === "config/device_registry/list") return devices;
-    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
-    if (message.type === "vectra_studio/studio_scene_list") return {scenes: [], active: null};
-    if (message.type === "vectra_studio/studio_scene_create") return {scenes: [], active: null};
-    return {};
-  }});
-  await flush();
-  panel.$("studio-name").value = "Füttern";
-  panel.$("studio-minutes").value = "25";
-  await panel._saveStudioScene();
-  assert.deepEqual(calls.at(-1), {type: "vectra_studio/studio_scene_create", tank_device_id: "tank",
-    name: "Füttern", source_scene: "Feed", duration_seconds: 1500});
-  panel.remove();
-});
-
-test("unlimited pause sends a null duration and never claims to hard-stop the pump", async () => {
-  const calls = [];
-  const {panel} = setup({callWS: async message => {
-    calls.push(message);
-    if (message.type === "config/device_registry/list") return devices;
-    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
-    if (message.type === "vectra_studio/studio_scene_list") return {scenes: [], active: null};
-    if (message.type === "vectra_studio/studio_pause") return {active: {label: "Pause", ends_at: null}};
-    return {};
-  }});
-  await flush();
-  panel.$("pause-infinite").checked = true;
-  panel._toggleDuration("pause");
-  await panel._startPause();
-  assert.deepEqual(calls.at(-1), {type: "vectra_studio/studio_pause", tank_device_id: "tank", source_scene: "Feed", duration_seconds: null});
-  assert.match(panel.$("studio-active").textContent, /manuell beendest/);
-  assert.match(panel.shadowRoot.textContent, /nicht hart aus/);
-  panel.remove();
-});
-
-test("an unavailable Studio-scene endpoint never hides live telemetry or standard scenes", async () => {
-  const {panel} = setup({callWS: async message => {
-    if (message.type === "config/device_registry/list") return devices;
-    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
-    if (message.type === "vectra_studio/studio_scene_list") throw new Error("unknown command");
-    return {};
-  }});
+test("read-only panel exposes telemetry but no pump control actions", async () => {
+  const {panel, writes} = setup();
   await flush();
   assert.equal(panel.$("content").hidden, false);
   assert.equal(panel.$("speed").textContent, "45 %");
-  assert.equal(panel.$("start").disabled, false);
-  assert.equal(panel.$("studio-save").disabled, true);
-  assert.match(panel.$("message").textContent, /Live-Werte und Mobius-Szenen/);
+  assert.equal(panel.$("start"), null);
+  assert.match(panel.shadowRoot.textContent, /Steuerung vorübergehend gesperrt/);
+  assert.deepEqual(writes, []);
   panel.remove();
 });
 

@@ -581,9 +581,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             coordinator.async_add_listener(lambda: hass.async_create_task(_async_check_tank_time(hass, entry)))
         )
 
-    from .studio_scenes import async_get_scene_manager
-    (await async_get_scene_manager(hass)).async_restore_timer(entry)
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 

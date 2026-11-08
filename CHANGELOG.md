@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.3.0
+
+- Sicherheitsmodus: Szenen, Pause und Zeitplan-Schreibbefehle sind wegen eines
+  gemeldeten, nicht reproduzierbar verifizierten Vectra-M2-Hardwareverhaltens
+  deaktiviert. Die Studio-Seite bleibt für Telemetrie lesend verfügbar.
+- Bereits gespeicherte Studio-Timer werden nach einem Neustart nicht mehr
+  wiederhergestellt und können keine automatische Rückkehr zum Zeitplan auslösen.
+
 ## 0.2.2
 
 - Leer bleibende Studio-Seite nach einem Update behoben: `model.js` wird nun
