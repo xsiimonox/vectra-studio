@@ -8,7 +8,7 @@
 Lokale Home-Assistant-Integration für EcoTech Vectra-Pumpen mit einer eigenen
 Oberfläche in der Seitenleiste: Pumpenstatus, Szenen und Tagesprogramme an einem Ort.
 
-**Experimentell:** Version 0.1.1 ist lokal auf Quellcode- und Frontend-Ebene geprüft.
+**Experimentell:** Version 0.1.2 ist lokal auf Quellcode- und Frontend-Ebene geprüft.
 Ein Laufzeittest auf Home Assistant und ein Hardwaretest mit der Vectra M2 stehen
 noch aus. Unterstützungsangaben sind keine Bestätigung für jede Firmware.
 
@@ -40,7 +40,7 @@ mit Home Assistant OS und Core 2026.10.1 vorgesehen.
 
 1. In HACS das Menü **Benutzerdefinierte Repositories / Custom repositories** öffnen.
 2. `https://github.com/xsiimonox/vectra-studio` als Typ **Integration** hinzufügen.
-3. Falls 0.1.1 nur als Vorabversion angeboten wird, in HACS **Beta-Versionen anzeigen** aktivieren.
+3. Falls 0.1.2 nur als Vorabversion angeboten wird, in HACS **Beta-Versionen anzeigen** aktivieren.
 4. **Vectra Studio** herunterladen und Home Assistant neu starten.
 5. Die Mobius-App schließen. Einen bereits eingerichteten `ha-mobius`-Eintrag für
    dasselbe Aquarium deaktivieren, damit nur eine Integration die Verbindung verwaltet.
@@ -66,7 +66,7 @@ Den Ordner `custom_components/vectra_studio` nach
 und ab Schritt 5 oben fortfahren. Die gebauten Dashboard-Karten sind im Repository
 enthalten; für die Installation ist kein Node.js nötig.
 
-Das Release enthält außerdem `vectra-studio-0.1.1.zip`. Es wird direkt im
+Das Release enthält außerdem `vectra-studio-0.1.2.zip`. Es wird direkt im
 Home-Assistant-Konfigurationsverzeichnis entpackt und enthält den Pfad
 `custom_components/vectra_studio/` bereits. ZIP-Layouts und Updates erklärt die
 [Installationsanleitung](docs/installation.md).

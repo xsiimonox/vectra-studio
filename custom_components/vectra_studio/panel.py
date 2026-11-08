@@ -27,8 +27,8 @@ async def async_register_studio_panel(hass: HomeAssistant) -> None:
     if PANEL_PATH not in hass.data.get(frontend.DATA_PANELS, {}):
         await async_register_panel(
             hass,
-            "vectra-studio-panel",
-            PANEL_PATH,
+            frontend_url_path=PANEL_PATH,
+            webcomponent_name="vectra-studio-panel",
             sidebar_title="Vectra Studio",
             sidebar_icon="mdi:pump",
             module_url=f"/vectra_studio_panel/vectra-studio.js?v={INTEGRATION_VERSION}",

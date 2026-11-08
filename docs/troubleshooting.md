@@ -50,6 +50,22 @@ Bei einem einzelnen Gerät belegt die Integration dessen Bluetooth-Verbindung.
 Den Aquarium-Eintrag unter **Geräte & Dienste → Vectra Studio** deaktivieren,
 dann die App verwenden. Anschließend App schließen und Eintrag wieder aktivieren.
 
+## Studio-Seite vollständig leer (0.1.0/0.1.1)
+
+Diese Versionen übergaben URL-Pfad und Webcomponent-Namen vertauscht an die
+Home-Assistant-Panelregistrierung. Dadurch erschien ein Seitenleisteneintrag,
+aber die Oberfläche wurde nicht erzeugt. Version **0.1.2** korrigiert den Aufruf.
+
+In HACS die Informationen aktualisieren, gegebenenfalls Beta-Versionen aktivieren
+und 0.1.2 oder neuer herunterladen. Anschließend Home Assistant **vollständig neu
+starten**, damit die alte Panelregistrierung entfernt wird. Den Browser danach
+neu laden; auf dem Desktop gegebenenfalls mit Strg+F5 bzw. Cmd+Shift+R. In der
+Companion-App die Oberfläche schließen und erneut öffnen.
+
+Den Eintrag aus der Seitenleiste neu öffnen. Die richtige URL endet jetzt auf
+`/vectra-studio`, nicht auf `/vectra-studio-panel`. Die Pumpe muss dafür nicht
+gelöscht oder erneut eingerichtet werden.
+
 ## Seitenleiste fehlt oder Editor lädt nicht
 
 Als Administrator anmelden und Browser neu laden. Prüfen, dass auch `panel/` und
