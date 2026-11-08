@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.2.2
+
+- Leer bleibende Studio-Seite nach einem Update behoben: `model.js` wird nun
+  mit derselben Versionskennung wie das Panel geladen. Damit kann Safari keine
+  neue Oberfläche mehr mit einer älteren, zwischengespeicherten Hilfsdatei
+  kombinieren.
+
 ## 0.2.1
 
 - Ein nicht verfügbarer Studio-Szenenspeicher blockiert die Studio-Seite nicht

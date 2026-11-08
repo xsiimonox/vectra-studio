@@ -1,6 +1,12 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "../custom_components/vectra_studio/panel/model.js";
+import {readFile} from "node:fs/promises";
+
+test("panel versions its model dependency to prevent a stale browser-cache import", async () => {
+  const panel = await readFile(new URL("../custom_components/vectra_studio/panel/vectra-studio.js", import.meta.url), "utf8");
+  assert.match(panel, /from "\.\/model\.js\?v=0\.2\.2"/);
+});
 
 test("only configured, enabled Vectra devices belong in the pump selector", () => {
   const device = {id: "m2", model: "VectraM2", identifiers: [["vectra_studio", "123"]]};
