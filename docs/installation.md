@@ -15,8 +15,8 @@
 
 1. HACS öffnen und im Menü **Custom repositories / Benutzerdefinierte Repositories** wählen.
 2. URL `https://github.com/xsiimonox/vectra-studio`, Typ **Integration**, hinzufügen.
-3. Vectra Studio öffnen. Für als Vorabversion markierte Releases gegebenenfalls
-   **Beta-Versionen anzeigen / Show beta versions** aktivieren.
+3. Vectra Studio öffnen und eine nummerierte Version wählen (ab **v0.1.2**
+   als regulärer Release verfügbar). Beta-Versionen müssen nicht aktiviert werden.
 4. Herunterladen und Home Assistant neu starten.
 5. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach
    **Vectra Studio** suchen.

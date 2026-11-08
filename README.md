@@ -40,7 +40,8 @@ mit Home Assistant OS und Core 2026.10.1 vorgesehen.
 
 1. In HACS das Menü **Benutzerdefinierte Repositories / Custom repositories** öffnen.
 2. `https://github.com/xsiimonox/vectra-studio` als Typ **Integration** hinzufügen.
-3. Falls 0.1.2 nur als Vorabversion angeboten wird, in HACS **Beta-Versionen anzeigen** aktivieren.
+3. **Vectra Studio** öffnen und die nummerierte Version **v0.1.2** oder neuer wählen.
+   Beta-Versionen müssen dafür nicht aktiviert werden.
 4. **Vectra Studio** herunterladen und Home Assistant neu starten.
 5. Die Mobius-App schließen. Einen bereits eingerichteten `ha-mobius`-Eintrag für
    dasselbe Aquarium deaktivieren, damit nur eine Integration die Verbindung verwaltet.

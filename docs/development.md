@@ -12,7 +12,7 @@
 | `custom_components/vectra_studio/frontend/dist/` | Gebaute Karten, im Repository enthalten |
 | `tests/` | Eigene Modell- und DOM-Tests der Studio-Oberfläche |
 | `tools/validate_release.py` | Strukturprüfung und Release-Pakete |
-| `.github/workflows/` | CI und Veröffentlichung getaggter Vorabversionen |
+| `.github/workflows/` | CI und Veröffentlichung getaggter Versionen |
 
 Das Panel verwendet die authentifizierte HA-Frontend-Sitzung. Es entdeckt Geräte
 über die Geräteverwaltung, liest Gruppenmetadaten über
@@ -57,12 +57,14 @@ minifizierten JavaScript vornehmen. Die Herkunftshinweise und GPL-Lizenz erhalte
 2. Alle Prüfungen ausführen und Änderungen auf `main` committen.
 3. Einen passenden Tag setzen und pushen, etwa `v0.1.1`.
 4. Der Release-Workflow prüft den Tag gegen das Manifest, baut und testet die
-   Karten und veröffentlicht die ZIP-Dateien als **Vorabversion**.
-5. HACS-Beta-Installation und danach Hardwaretests durchführen.
+   Karten und veröffentlicht die ZIP-Dateien als regulären, neuesten GitHub-Release.
+5. HACS-Installation der nummerierten Version und danach Hardwaretests durchführen.
 
-Der Workflow markiert Releases bewusst als Vorabversion, solange das Projekt
-experimentell ist. Ein stabiler Release erfordert eine dokumentierte Hardware-Erprobung
-und eine ausdrückliche Anpassung dieses Veröffentlichungsprozesses.
+Die GitHub-Klassifizierung als regulärer Release ermöglicht HACS die Auswahl
+der Versionsnummer ohne Beta-Option. Sie ist keine Bestätigung eines Hardwaretests:
+Der experimentelle Entwicklungsstand bleibt in README und Changelog dokumentiert.
+Nur Vorabversionen zu veröffentlichen führt bei deaktivierten Betas zum Rückfall
+auf den Standardbranch; HACS zeigt dann eine Commit-ID statt einer Versionsnummer.
 
 `vectra_studio.zip` enthält nur die Integrationsdateien für eine manuelle Installation.
 HACS selbst lädt die Dateien direkt aus dem Repository, damit auch Branch- und

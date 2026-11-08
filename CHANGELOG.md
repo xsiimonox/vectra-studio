@@ -1,5 +1,12 @@
 # Änderungen
 
+## Noch nicht veröffentlicht
+
+- Release-Workflow veröffentlicht nummerierte Versionen regulär statt ausschließlich
+  als Vorabversion; HACS kann sie ohne Beta-Option auswählen.
+- Bestehenden Release v0.1.2 als regulären, neuesten Release bereitgestellt.
+  Der Anwendungscode und die Geräteunterstützung dieses Releases bleiben unverändert.
+
 ## 0.1.2
 
 - Leere Studio-Seite behoben: URL-Pfad und Webcomponent-Name wurden bei

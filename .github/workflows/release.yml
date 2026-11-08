@@ -31,12 +31,12 @@ jobs:
       - run: python -m unittest discover -s tests -p "test_*.py"
       - name: Validate tag and package
         run: python tools/validate_release.py --package --tag "$GITHUB_REF_NAME"
-      - name: Publish experimental release
+      - name: Publish versioned release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
           dist/vectra_studio.zip dist/vectra-studio-*.zip
-          --verify-tag --prerelease
+          --verify-tag --latest
           --title "Vectra Studio $GITHUB_REF_NAME (experimentell)"
           --notes-file CHANGELOG.md

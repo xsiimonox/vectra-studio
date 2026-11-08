@@ -14,6 +14,19 @@ anzeigen** aktivieren und **v0.1.1** wählen; alternativ den aktuellen Standardb
 Bleibt noch die alte Auswahl sichtbar, die HACS-Seite neu laden und nötigenfalls
 Home Assistant neu starten. Die neue Konfiguration muss vor dem Download eingelesen sein.
 
+## HACS zeigt eine Commit-ID statt der Versionsnummer
+
+`981e022` bezeichnet einen Git-Commit, nicht die Integrationsversion. Bis zur
+Korrektur der Release-Metadaten waren alle Releases als Vorabversion markiert.
+Ohne Beta-Option wählte HACS deshalb den Standardbranch. **v0.1.2** ist nun als
+regulärer, neuester Release verfügbar; künftige Versionen werden ebenso veröffentlicht.
+
+In HACS **Informationen aktualisieren / Update information** auswählen und
+anschließend unter **Herunterladen / Erneut herunterladen** die Version **v0.1.2**
+oder neuer wählen. Ein bereits als Branch installierter Stand kann eine explizite
+Versionsauswahl benötigen. Für den Wechsel zur nummerierten Version ist weder
+das Löschen der Pumpe noch ein Zurücksetzen ihrer Konfiguration erforderlich.
+
 ## Integration erscheint nicht
 
 Nach Installation Home Assistant vollständig neu starten. Bei manueller Installation
@@ -56,8 +69,8 @@ Diese Versionen übergaben URL-Pfad und Webcomponent-Namen vertauscht an die
 Home-Assistant-Panelregistrierung. Dadurch erschien ein Seitenleisteneintrag,
 aber die Oberfläche wurde nicht erzeugt. Version **0.1.2** korrigiert den Aufruf.
 
-In HACS die Informationen aktualisieren, gegebenenfalls Beta-Versionen aktivieren
-und 0.1.2 oder neuer herunterladen. Anschließend Home Assistant **vollständig neu
+In HACS die Informationen aktualisieren, die Version v0.1.2
+oder neuer auswählen und herunterladen. Anschließend Home Assistant **vollständig neu
 starten**, damit die alte Panelregistrierung entfernt wird. Den Browser danach
 neu laden; auf dem Desktop gegebenenfalls mit Strg+F5 bzw. Cmd+Shift+R. In der
 Companion-App die Oberfläche schließen und erneut öffnen.
