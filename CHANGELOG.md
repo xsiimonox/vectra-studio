@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.1.4
+
+- Das logische Aquarium-Gerät heißt nun `Aquarium: …` und trägt das Modell
+  `Mobius Aquarium`, damit es nicht wie eine zweite physische Vectra erscheint.
+
 ## 0.1.3
 
 - Studio lädt Zeitplan- und Szenenmetadaten über das zugehörige Aquarium statt

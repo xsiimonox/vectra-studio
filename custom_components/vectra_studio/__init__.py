@@ -178,9 +178,12 @@ def _register_tank_device(hass: HomeAssistant, entry: ConfigEntry, mlprefix_hex:
     dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={tank_device_identifier(mlprefix_hex, pan_id)},
-        name=entry.title,
+        # A tank is a logical aquarium container, not a second physical pump.
+        # Its previous name was identical to the pump's entry title, which made
+        # Home Assistant's device list look as if the same pump was discovered twice.
+        name=f"Aquarium: {entry.title}",
         manufacturer="EcoTech Marine",
-        model="Tank",
+        model="Mobius Aquarium",
     )
 
 

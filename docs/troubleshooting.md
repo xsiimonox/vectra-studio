@@ -51,6 +51,20 @@ Modell als Vectra erkannt wurde. Das übergeordnete Aquarium ist keine Pumpe.
 Auf die erste erfolgreiche Geräteabfrage warten und **Geräte neu laden** betätigen.
 Bleibt die Liste leer, die gemeldete Modellkennung im Fehlerbericht angeben.
 
+## Warum erscheinen zwei Geräte mit derselben Seriennummer?
+
+Vectra Studio legt ein physisches Gerät für die Pumpe und ein logisches
+**Aquarium-Gerät** an. Dieses enthält die gemeinsamen Funktionen eines
+Mobius-Aquariums, etwa Szenenauswahl, Zeitabgleich und Verbindungs-/Gateway-Diagnose.
+Es ist keine zweite Bluetooth-Verbindung und keine zweite Pumpe. Die Pumpe verweist
+über ihre Gerätebeziehung auf dieses Aquarium; deshalb werden Szenen und Zeitpläne
+darüber geladen.
+
+Ab Version **0.1.4** heißen diese Geräte `Aquarium: …` und haben das Modell
+`Mobius Aquarium`. Der Name des bereits angelegten Aquarium-Geräts wird nach dem
+Update beim Neustart aktualisiert. Einen eigenen Namen, den du in Home Assistant
+manuell vergeben hast, überschreibt Home Assistant dabei nicht.
+
 ## Kein Durchfluss oder unbekannter Modus
 
 Nicht jede Firmware liefert alle Werte. Ein fehlender Durchfluss ist kein
