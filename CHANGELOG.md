@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.4.2
+
+- Controller-Diagnose liest zusätzlich LiveDemoScene (407), LiveDemoTimeout
+  (405) und LiveDemoTimer (406). Alle gelieferten Elemente und ihre Rohbytes
+  bleiben erhalten. Der noch ungeklärte M2-LiveDemo-Payload wird nicht als
+  verifizierter Leistungswert interpretiert.
+- Diagnose verwendet weiterhin nur Lesebefehle; keine neue LiveDemo-Steuerung.
+
 ## 0.4.1
 
 - Neuer Button „Betriebszustand auslesen“: liest Attribute 104, 105, 705,

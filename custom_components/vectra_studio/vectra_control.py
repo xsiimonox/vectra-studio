@@ -23,14 +23,23 @@ async def read_control_state(device):
         ("pump_override_mode", 705, 1, False),
         ("current_scene", 401, 4, False),
         ("motor_speed", 700, 2, True),
+        ("live_demo_scene", 407, 1, False),
+        ("live_demo_timeout", 405, 2, False),
+        ("live_demo_timer", 406, 2, False),
     ):
         record = {"attribute_id": attribute, "raw_hex": None, "value": None, "error": None}
         try:
             values = await device.get_attribute(attribute)
             raw = values[0] if values else b""
             record["raw_hex"] = raw.hex()
+            record["elements_hex"] = [element.hex() for element in values]
+            record["length_bytes"] = len(raw)
             if len(raw) < size:
                 record["error"] = f"Short/empty response: expected at least {size} bytes, got {len(raw)}"
+            elif name == "live_demo_scene":
+                # Payload semantics are not verified for M2: retain every
+                # element verbatim instead of inventing a mode/speed mapping.
+                record["value"] = None
             elif name == "current_scene":
                 record["value"] = int.from_bytes(raw[:2], "little")
                 record["duration_seconds"] = int.from_bytes(raw[2:4], "little")

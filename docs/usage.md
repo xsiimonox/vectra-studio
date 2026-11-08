@@ -11,6 +11,12 @@ einzelner Attribute bleiben sichtbar, ohne andere Ergebnisse zu verwerfen.
 Zum Untersuchen einer blockierten Änderung diese Ausgabe kopieren. Es werden
 keine Szenen gestartet/beendet und keine Einstellungen geschrieben.
 
+Ab v0.4.2 enthält die Ausgabe auch `live_demo_scene` (407),
+`live_demo_timeout` (405) und `live_demo_timer` (406). Bei LiveDemoScene bleibt
+`value` absichtlich leer: `raw_hex` und `elements_hex` enthalten den noch nicht
+verifiziert dekodierten Payload. Ein leerer Wert ist hier kein Lesefehler;
+maßgeblich ist das Feld `error`.
+
 In Mobius zuerst einen normalen ConstantSpeed-Zeitplan einrichten und Feed sowie
 Overrides beenden. Danach Mobius schließen und Vectra Studio aktivieren. Die
 neue Entität **Konstantleistung (aktueller Zeitplanblock)** akzeptiert ganze

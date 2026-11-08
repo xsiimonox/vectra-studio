@@ -70,6 +70,10 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
                 raise IOError("FSCI rejected 105")
             if attribute == 700:
                 return [b"\xc8\x00"]
+            if attribute == 407:
+                return [b"\x01\xba\x02", b"\x00\xff"]
+            if attribute in (405, 406):
+                return [b"\x3c\x00"]
             return []
         self.device.get_attribute = AsyncMock(side_effect=get)
         data = (await self.module.read_control_state(self.device))["attributes"]
@@ -79,6 +83,10 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("FSCI", data["operation_mode"]["error"])
         self.assertEqual(data["motor_speed"]["percent"], 20)
         self.assertIsNone(data["pump_override_mode"]["value"])
+        self.assertEqual(data["live_demo_scene"]["elements_hex"], ["01ba02", "00ff"])
+        self.assertIsNone(data["live_demo_scene"]["value"])
+        self.assertEqual(data["live_demo_timeout"]["value"], 60)
+        self.assertEqual(data["live_demo_timer"]["value"], 60)
         self.device.set_pump_schedule.assert_not_awaited()
 
     async def test_invalid_values_never_contact_device(self):

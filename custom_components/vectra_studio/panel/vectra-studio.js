@@ -2,7 +2,7 @@
 // The panel itself is versioned by panel.py. Version the static dependency too:
 // otherwise Safari may combine a new panel with an old cached model.js and fail
 // module evaluation before it can render anything.
-import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.4.1";
+import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.4.2";
 
 class VectraStudioPanel extends HTMLElement {
   constructor() {
@@ -28,11 +28,11 @@ class VectraStudioPanel extends HTMLElement {
         #message{white-space:pre-wrap;padding:16px;border-radius:12px;background:var(--card-background-color,#fff);margin:16px 0;border:1px solid var(--divider-color,#d4e0e2)}#message.error{border-color:var(--error-color,#c44)}[hidden]{display:none!important}#editor{margin-top:20px}footer{font-size:12px;line-height:1.7;color:var(--secondary-text-color,#667d82);margin-top:28px} .empty{padding:35px 0;max-width:650px}
         @media(max-width:650px){main{padding:24px 16px}.metrics{grid-template-columns:1fr}.metric{padding:18px}.value{font-size:26px}header{padding:12px}.tag{display:none}.fields{grid-template-columns:1fr}.studio-item{align-items:flex-start;flex-wrap:wrap}.studio-item button{margin-left:0}}
       </style>
-      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.4.1</span></header>
+      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.4.2</span></header>
       <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status deiner Vectra an einem Ort.</p>
         <div class="toolbar"><label>Pumpe<select id="device" aria-label="Pumpe auswählen"></select></label><button id="refresh">Geräte neu laden</button></div>
         <div id="message" role="status" aria-live="polite" hidden></div>
-        <div class="box"><h2>Controller-Diagnose</h2><p>Direktes Auslesen von Betriebszustand, Betriebsmodus, Override, Szene und Motorleistung. Auch unbekannte Werte und einzelne Lesefehler werden angezeigt.</p><button id="read-control">Betriebszustand auslesen</button><pre id="control-state" style="white-space:pre-wrap;overflow-wrap:anywhere" role="status"></pre></div>
+        <div class="box"><h2>Controller-Diagnose</h2><p>Direktes Auslesen von Betriebszustand, Betriebsmodus, Override, Szene, Motorleistung sowie LiveDemo-Daten, Timer und Timeout. Auch unbekannte Werte und einzelne Lesefehler werden angezeigt.</p><button id="read-control">Betriebszustand auslesen</button><pre id="control-state" style="white-space:pre-wrap;overflow-wrap:anywhere" role="status"></pre></div>
         <section id="empty" class="empty" hidden><h2>Noch keine Vectra gefunden</h2><p>Füge unter Einstellungen → Geräte & Dienste eine Vectra über die Integration „Vectra Studio“ hinzu. Schließe die Mobius-App und prüfe den Bluetooth-Empfang am Pumpencontroller. Lade anschließend die Geräte hier neu.</p></section>
         <section id="content" hidden>
           <div class="box"><h2>Konstantleistung</h2><p>Ändert dauerhaft den aktuellen ConstantSpeed-Zeitplanblock (1–100 %, ganze Schritte). Andere Blöcke bleiben erhalten. Feed und Controller-Overrides vorher in Mobius beenden. Der Sollwert ist keine Durchflussmessung.</p><input id="power" type="number" min="1" max="100" step="1" aria-label="Konstantleistung in Prozent"><button id="apply-power" disabled>Leistung übernehmen</button><p id="power-result" role="status"></p></div>
