@@ -16,7 +16,12 @@ function setup(overrides = {}) {
   const hass = {
     states: {"sensor.speed": {state: "45", attributes: {unit_of_measurement: "%"}},
       "sensor.mode": {state: "Constant"}, "select.scene": {state: "None", attributes: {options: ["None", "Feed"]}}},
-    async callWS(message) { return message.type === "config/device_registry/list" ? devices : {groups: [group]}; },
+    async callWS(message) {
+      if (message.type === "config/device_registry/list") return devices;
+      if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
+      if (message.type === "vectra_studio/studio_scene_list") return {scenes: [], active: null};
+      return {};
+    },
     async callService(...args) { writes.push(args); },
     ...overrides,
   };
@@ -88,6 +93,46 @@ test("pump selection resolves tank-wide metadata through its parent tank", async
   }});
   await flush();
   assert.deepEqual(calls[1], {type: "vectra_studio/resolve_schedule_groups", device_id: "tank"});
+  assert.deepEqual(calls[2], {type: "vectra_studio/studio_scene_list", tank_device_id: "tank"});
+  panel.remove();
+});
+
+test("Studio scenes save a configured Mobius scene with a finite return timer", async () => {
+  const calls = [];
+  const {panel} = setup({callWS: async message => {
+    calls.push(message);
+    if (message.type === "config/device_registry/list") return devices;
+    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
+    if (message.type === "vectra_studio/studio_scene_list") return {scenes: [], active: null};
+    if (message.type === "vectra_studio/studio_scene_create") return {scenes: [], active: null};
+    return {};
+  }});
+  await flush();
+  panel.$("studio-name").value = "Füttern";
+  panel.$("studio-minutes").value = "25";
+  await panel._saveStudioScene();
+  assert.deepEqual(calls.at(-1), {type: "vectra_studio/studio_scene_create", tank_device_id: "tank",
+    name: "Füttern", source_scene: "Feed", duration_seconds: 1500});
+  panel.remove();
+});
+
+test("unlimited pause sends a null duration and never claims to hard-stop the pump", async () => {
+  const calls = [];
+  const {panel} = setup({callWS: async message => {
+    calls.push(message);
+    if (message.type === "config/device_registry/list") return devices;
+    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
+    if (message.type === "vectra_studio/studio_scene_list") return {scenes: [], active: null};
+    if (message.type === "vectra_studio/studio_pause") return {active: {label: "Pause", ends_at: null}};
+    return {};
+  }});
+  await flush();
+  panel.$("pause-infinite").checked = true;
+  panel._toggleDuration("pause");
+  await panel._startPause();
+  assert.deepEqual(calls.at(-1), {type: "vectra_studio/studio_pause", tank_device_id: "tank", source_scene: "Feed", duration_seconds: null});
+  assert.match(panel.$("studio-active").textContent, /manuell beendest/);
+  assert.match(panel.shadowRoot.textContent, /nicht hart aus/);
   panel.remove();
 });
 

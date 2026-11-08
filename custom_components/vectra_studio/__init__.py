@@ -109,6 +109,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     from .services import async_register_services
     async_register_services(hass)
 
+    from .studio_scenes import async_get_scene_manager
+    await async_get_scene_manager(hass)
+
     # Card registration is optional and must not break setup (see
     # frontend/__init__.py). It needs http/frontend, so it runs once Home
     # Assistant has started.
@@ -577,6 +580,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.async_on_unload(
             coordinator.async_add_listener(lambda: hass.async_create_task(_async_check_tank_time(hass, entry)))
         )
+
+    from .studio_scenes import async_get_scene_manager
+    (await async_get_scene_manager(hass)).async_restore_timer(entry)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

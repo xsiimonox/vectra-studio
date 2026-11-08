@@ -36,7 +36,7 @@ def main():
         if "schedule" in name:
             assert "vectra_studio/" in source
         assert not re.search(r'''["']mobius(?:/|["'])''', source), "Stale backend namespace"
-    for name in ["LICENSE", "panel.py", "panel/model.js", "panel/vectra-studio.js", "translations/de.json", "panel/vectra-studio-logo.png", "brand/icon.png", "brand/icon@2x.png"]:
+    for name in ["LICENSE", "panel.py", "panel/model.js", "panel/vectra-studio.js", "studio_scenes.py", "translations/de.json", "panel/vectra-studio-logo.png", "brand/icon.png", "brand/icon@2x.png"]:
         assert (COMPONENT / name).is_file(), f"Missing {name}"
     assert (ROOT / "frontend-src" / "package.json").is_file(), "Include editor source"
     assert (ROOT / "NOTICE.md").is_file()

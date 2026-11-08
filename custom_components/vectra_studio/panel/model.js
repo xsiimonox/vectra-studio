@@ -20,3 +20,16 @@ export function sceneOptions(states, entityId) {
   return entity && !["unknown", "unavailable"].includes(entity.state)
     ? (entity.attributes?.options || []).filter(option => option !== "None") : [];
 }
+
+export function studioDurationSeconds(minutes, infinite) {
+  if (infinite) return null;
+  const value = Number(minutes);
+  if (!Number.isInteger(value) || value < 1 || value > 10080) return undefined;
+  return value * 60;
+}
+
+export function formatStudioDuration(seconds) {
+  if (seconds == null) return "bis manuell beendet";
+  const minutes = Math.round(seconds / 60);
+  return minutes < 60 ? `${minutes} Min.` : `${Math.floor(minutes / 60)} Std. ${minutes % 60 ? `${minutes % 60} Min.` : ""}`.trim();
+}

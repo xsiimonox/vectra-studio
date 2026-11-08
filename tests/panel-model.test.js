@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {vectraDevices, pumpGroup, displayState, sceneOptions} from "../custom_components/vectra_studio/panel/model.js";
+import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "../custom_components/vectra_studio/panel/model.js";
 
 test("only configured, enabled Vectra devices belong in the pump selector", () => {
   const device = {id: "m2", model: "VectraM2", identifiers: [["vectra_studio", "123"]]};
@@ -33,4 +33,14 @@ test("unavailable scenes cannot be started; return to schedule is separate", () 
   assert.deepEqual(sceneOptions({scene: {state: "None", attributes}}, "scene"), ["Feed", "Maintenance"]);
   assert.deepEqual(sceneOptions({scene: {state: "unavailable", attributes}}, "scene"), []);
   assert.deepEqual(sceneOptions({}, "scene"), []);
+});
+
+test("Studio durations support one minute through seven days and manual return", () => {
+  assert.equal(studioDurationSeconds("1", false), 60);
+  assert.equal(studioDurationSeconds("10080", false), 604800);
+  assert.equal(studioDurationSeconds("0", false), undefined);
+  assert.equal(studioDurationSeconds("5.5", false), undefined);
+  assert.equal(studioDurationSeconds("anything", true), null);
+  assert.equal(formatStudioDuration(null), "bis manuell beendet");
+  assert.equal(formatStudioDuration(90 * 60), "1 Std. 30 Min.");
 });

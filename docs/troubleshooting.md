@@ -2,6 +2,19 @@
 
 [Zur Übersicht](../README.md)
 
+## Studio-Szene oder Pause kann nicht gestartet werden
+
+Vectra Studio erzeugt keine eigene Pumpenpause, sondern startet eine vorhandene
+Mobius-Szene. Lege in Mobius zunächst eine Feed- oder Wartungsszene an, lasse die
+Integration die Daten aktualisieren und lade danach die Studio-Seite neu. Erscheint
+die Szene weiterhin nicht, prüfe die Entität `select.… Szene` des zugehörigen
+Aquariums sowie die Bluetooth-Verbindung.
+
+„Unbegrenzt“ bedeutet, dass Vectra Studio keinen Rückkehrzeitpunkt setzt. Mit
+**Pause/Szene beenden** wird das Tagesprogramm wieder angefordert. Bei einem
+endlichen Timer bleibt ein fehlgeschlagener Rückkehrversuch sichtbar, damit er
+nach Wiederherstellung der Bluetooth-Verbindung manuell wiederholt werden kann.
+
 ## Download schlägt für Version `596924f` fehl
 
 Version 0.1.0 setzte `zip_release: true`, obwohl ohne aktivierte Vorabversionen

@@ -25,6 +25,24 @@ der angezeigte Pumpenzustand wird weiterhin aus den Gerätedaten gelesen.
 Es werden keine neuen Feed- oder Wartungsszenen automatisch angelegt. Welche
 Szenen verfügbar sind, hängt von der Konfiguration in Mobius ab.
 
+## Studio-Szenen und Pause
+
+Unter **Studio-Szenen & Pause** lassen sich eigene, lokale Schnellzugriffe auf
+eine vorhandene Mobius-Szene anlegen. Vergib einen Namen, wähle die Mobius-Szene
+und setze die Rückkehrzeit zwischen einer Minute und sieben Tagen. Mit
+**Unbegrenzt** bleibt sie aktiv, bis **Pause/Szene beenden** gewählt wird.
+
+Der Eintrag und ein gerade aktiver Rückkehrtimer werden nur in Home Assistant
+gespeichert. Bei einem Neustart wird ein endlicher Timer wiederhergestellt.
+Eine in Mobius hinterlegte, kürzere Szenendauer kann die Pumpenparameter jedoch
+vorher ändern; richte die Mobius-Szene daher passend ein.
+
+**Pause starten** ist absichtlich kein direkter „Pumpe aus“-Befehl: Wähle dafür
+eine selbst in Mobius angelegte Feed- oder Wartungsszene. So bleibt die
+Rückförderung unter der von Ecotech vorgesehenen Szenenkonfiguration. Beende die
+Pause manuell oder lasse Vectra Studio nach der gewählten Dauer zum Tagesprogramm
+zurückkehren.
+
 ## Zeitpläne
 
 **Zeitplan-Editor öffnen** lädt den mitgelieferten Editor aus ha-mobius. Er ist

@@ -12,6 +12,7 @@ from typing import Any, Awaitable, Callable
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
@@ -27,6 +28,7 @@ from . import MobiusRuntimeData
 from .const import DOMAIN
 from .coordinator import MobiusDeviceCoordinator, used_scenes
 from .gateway_registry import params_with_parent_serial
+from .studio_scenes import async_get_scene_manager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -310,6 +312,125 @@ async def handle_resolve_schedule_groups(
     connection.send_result(msg["id"], {"groups": [g.as_dict() for g in groups]})
 
 
+def _studio_scene_entry(hass: HomeAssistant, tank_device_id: str) -> ConfigEntry:
+    """Resolve a Studio-scene request to its configured aquarium entry."""
+    tank = dr.async_get(hass).async_get(tank_device_id)
+    if tank is None:
+        raise ScheduleGroupError(_ERR.ERR_NOT_FOUND, f"No device found for device_id {tank_device_id!r}")
+    if not _is_tank_device(tank):
+        raise ScheduleGroupError(_ERR.ERR_NOT_SUPPORTED, "Choose the aquarium device for Studio scenes")
+    entry_id, _runtime = _device_runtime(hass, tank, "Aquarium device")
+    entry = hass.config_entries.async_get_entry(entry_id)
+    assert entry is not None
+    return entry
+
+
+def _duration_seconds(value: Any) -> int | None:
+    """None means no automatic return; finite scene/pause duration is 1 min–7 d."""
+    if value is None:
+        return None
+    try:
+        seconds = int(value)
+    except (TypeError, ValueError) as err:
+        raise ScheduleGroupError(_ERR.ERR_INVALID_FORMAT, "Duration must be a whole number of seconds or null") from err
+    if not 60 <= seconds <= 7 * 24 * 60 * 60:
+        raise ScheduleGroupError(_ERR.ERR_INVALID_FORMAT, "Duration must be between 1 minute and 7 days, or null for manual return")
+    return seconds
+
+
+async def _studio_scene_command(hass, connection, msg, callback) -> None:
+    try:
+        entry = _studio_scene_entry(hass, msg["tank_device_id"])
+        result = await callback(entry, await async_get_scene_manager(hass))
+    except ScheduleGroupError as err:
+        connection.send_error(msg["id"], err.code, err.message)
+    except HomeAssistantError as err:
+        connection.send_error(msg["id"], _ERR.ERR_HOME_ASSISTANT_ERROR, str(err))
+    except Exception as err:  # defensive boundary for panel callers
+        _LOGGER.exception("Studio scene command failed")
+        connection.send_error(msg["id"], _ERR.ERR_UNKNOWN_ERROR, str(err))
+    else:
+        connection.send_result(msg["id"], result)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_scene_list",
+    vol.Required("tank_device_id"): str,
+})
+@websocket_api.async_response
+async def handle_studio_scene_list(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def list_scenes(entry, manager):
+        return manager.list(entry.entry_id)
+    await _studio_scene_command(hass, connection, msg, list_scenes)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_scene_create",
+    vol.Required("tank_device_id"): str,
+    vol.Required("name"): str,
+    vol.Required("source_scene"): str,
+    vol.Required("duration_seconds"): vol.Any(None, int),
+})
+@websocket_api.async_response
+async def handle_studio_scene_create(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def create(entry, manager):
+        scene = await manager.async_create(entry.entry_id, msg["name"], msg["source_scene"], _duration_seconds(msg["duration_seconds"]))
+        return {"scene": scene, **manager.list(entry.entry_id)}
+    await _studio_scene_command(hass, connection, msg, create)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_scene_delete",
+    vol.Required("tank_device_id"): str,
+    vol.Required("scene_id"): str,
+})
+@websocket_api.async_response
+async def handle_studio_scene_delete(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def delete(entry, manager):
+        await manager.async_delete(entry.entry_id, msg["scene_id"])
+        return manager.list(entry.entry_id)
+    await _studio_scene_command(hass, connection, msg, delete)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_scene_activate",
+    vol.Required("tank_device_id"): str,
+    vol.Required("scene_id"): str,
+})
+@websocket_api.async_response
+async def handle_studio_scene_activate(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def activate(entry, manager):
+        active = await manager.async_activate_saved(entry, msg["scene_id"])
+        return {"active": active}
+    await _studio_scene_command(hass, connection, msg, activate)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_pause",
+    vol.Required("tank_device_id"): str,
+    vol.Required("source_scene"): str,
+    vol.Required("duration_seconds"): vol.Any(None, int),
+})
+@websocket_api.async_response
+async def handle_studio_pause(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def pause(entry, manager):
+        active = await manager.async_activate(entry, msg["source_scene"], _duration_seconds(msg["duration_seconds"]), "Pause")
+        return {"active": active}
+    await _studio_scene_command(hass, connection, msg, pause)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/studio_scene_resume",
+    vol.Required("tank_device_id"): str,
+})
+@websocket_api.async_response
+async def handle_studio_scene_resume(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    async def resume(entry, manager):
+        await manager.async_resume(entry)
+        return {"active": None}
+    await _studio_scene_command(hass, connection, msg, resume)
+
+
 def _mode_param_names(mode: PumpMode) -> list[str]:
     """Parameter names of `mode` as the card sees them (Master is
     replaced by ParentSerial, see _translate_master_to_parent_serial())."""
@@ -481,5 +602,7 @@ def async_register_websocket_commands(hass: HomeAssistant) -> None:
     for command in (
         handle_resolve_schedule_groups, handle_read_schedule_group,
         handle_export_schedule_group_mob, handle_parse_schedule_mob,
+        handle_studio_scene_list, handle_studio_scene_create, handle_studio_scene_delete,
+        handle_studio_scene_activate, handle_studio_pause, handle_studio_scene_resume,
     ):
         websocket_api.async_register_command(hass, command)

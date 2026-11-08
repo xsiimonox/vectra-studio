@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.2.0
+
+- Lokale Studio-Szenenbibliothek: Eine vorhandene Mobius-Szene kann mit einem
+  eigenen Namen und einer Rückkehrzeit von einer Minute bis sieben Tagen gespeichert
+  und gestartet werden.
+- Neuer Pause-Button mit frei wählbarer Dauer oder „Unbegrenzt“. Nach einer
+  endlichen Dauer wird das Tagesprogramm wieder aktiviert; unbegrenzt bleibt die
+  Szene aktiv, bis sie manuell beendet wird.
+- Szenen und aktive Rückkehrzeit werden lokal in Home Assistant gespeichert und
+  ein endlicher Timer wird nach einem Home-Assistant-Neustart erneut eingeplant.
+- Die Pause startet bewusst eine konfigurierte Mobius-Wartungs-/Feed-Szene, statt
+  eine Rückförderpumpe mit einem nicht verifizierten Direktbefehl hart auszuschalten.
+
 ## 0.1.4
 
 - Das logische Aquarium-Gerät heißt nun `Aquarium: …` und trägt das Modell
