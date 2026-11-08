@@ -136,6 +136,22 @@ test("unlimited pause sends a null duration and never claims to hard-stop the pu
   panel.remove();
 });
 
+test("an unavailable Studio-scene endpoint never hides live telemetry or standard scenes", async () => {
+  const {panel} = setup({callWS: async message => {
+    if (message.type === "config/device_registry/list") return devices;
+    if (message.type === "vectra_studio/resolve_schedule_groups") return {groups: [group]};
+    if (message.type === "vectra_studio/studio_scene_list") throw new Error("unknown command");
+    return {};
+  }});
+  await flush();
+  assert.equal(panel.$("content").hidden, false);
+  assert.equal(panel.$("speed").textContent, "45 %");
+  assert.equal(panel.$("start").disabled, false);
+  assert.equal(panel.$("studio-save").disabled, true);
+  assert.match(panel.$("message").textContent, /Live-Werte und Mobius-Szenen/);
+  panel.remove();
+});
+
 test("a pump without a tank relationship explains the setup issue without calling the backend", async () => {
   const calls = [];
   const orphan = [{...devices[0], via_device_id: null}];

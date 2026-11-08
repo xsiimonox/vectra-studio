@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.2.1
+
+- Ein nicht verfügbarer Studio-Szenenspeicher blockiert die Studio-Seite nicht
+  mehr: Live-Werte und die vorhandenen Mobius-Szenen bleiben sichtbar und nutzbar.
+- Studio-Szenen fordern nach Start und Rückkehr sofort eine Aktualisierung der
+  Gerätedaten an, statt auf das reguläre Abfrageintervall zu warten.
+
 ## 0.2.0
 
 - Lokale Studio-Szenenbibliothek: Eine vorhandene Mobius-Szene kann mit einem

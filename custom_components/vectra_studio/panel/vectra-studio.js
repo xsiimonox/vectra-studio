@@ -11,6 +11,7 @@ class VectraStudioPanel extends HTMLElement {
     this._busy = false;
     this._studioScenes = [];
     this._studioActive = null;
+    this._studioAvailable = true;
     this.shadowRoot.innerHTML = `
       <style>
         :host{display:block;color:var(--primary-text-color,#17363d);background:var(--primary-background-color,#f3f7f7);min-height:100vh;font-family:var(--paper-font-body1_-_font-family,system-ui)}
@@ -24,7 +25,7 @@ class VectraStudioPanel extends HTMLElement {
         #message{white-space:pre-wrap;padding:16px;border-radius:12px;background:var(--card-background-color,#fff);margin:16px 0;border:1px solid var(--divider-color,#d4e0e2)}#message.error{border-color:var(--error-color,#c44)}[hidden]{display:none!important}#editor{margin-top:20px}footer{font-size:12px;line-height:1.7;color:var(--secondary-text-color,#667d82);margin-top:28px} .empty{padding:35px 0;max-width:650px}
         @media(max-width:650px){main{padding:24px 16px}.metrics{grid-template-columns:1fr}.metric{padding:18px}.value{font-size:26px}header{padding:12px}.tag{display:none}.fields{grid-template-columns:1fr}.studio-item{align-items:flex-start;flex-wrap:wrap}.studio-item button{margin-left:0}}
       </style>
-      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.2.0</span></header>
+      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.2.1</span></header>
       <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status, Szenen und Tagesprogramm deiner Vectra an einem Ort.</p>
         <div class="toolbar"><label>Pumpe<select id="device" aria-label="Pumpe auswählen"></select></label><button id="refresh">Geräte neu laden</button></div>
         <div id="message" role="status" aria-live="polite" hidden></div>
@@ -125,6 +126,7 @@ class VectraStudioPanel extends HTMLElement {
     this._group = null;
     this._studioScenes = [];
     this._studioActive = null;
+    this._studioAvailable = true;
     this._clearEditor();
     this.$("content").hidden = true;
     this._message("Pumpendaten werden geladen …");
@@ -143,9 +145,12 @@ class VectraStudioPanel extends HTMLElement {
       if (!this._group) throw new Error("Die Pumpe meldet noch keine unterstützten Zeitplandaten. Prüfe die Diagnose der Integration und lade die Geräte erneut.");
       this._member = this._group.members.find(m => m.device_id === deviceId);
       this.$("content").hidden = false;
-      await this._loadStudioScenes(token);
       this._message("");
       this._updateLive();
+      // The optional Studio-scene store must never hide live telemetry and
+      // normal Mobius controls when HA has not reloaded its new websocket
+      // handlers yet (for example immediately after a HACS update).
+      await this._loadStudioScenes(token);
     } catch (err) {
       if (token === this._selection) this._message(err.message || String(err), true);
     }
@@ -223,10 +228,10 @@ class VectraStudioPanel extends HTMLElement {
       } else if (options.includes(previous)) {
         select.value = previous;
       }
-      select.disabled = this._busy || !options.length;
+      select.disabled = this._busy || !this._studioAvailable || !options.length;
     }
-    this.$("studio-save").disabled = this._busy || !options.length;
-    this.$("pause").disabled = this._busy || !options.length;
+    this.$("studio-save").disabled = this._busy || !this._studioAvailable || !options.length;
+    this.$("pause").disabled = this._busy || !this._studioAvailable || !options.length;
   }
   _toggleDuration(prefix) {
     const infinite = this.$(`${prefix}-infinite`).checked;
@@ -237,7 +242,11 @@ class VectraStudioPanel extends HTMLElement {
   _renderStudioScenes() {
     const list = this.$("studio-scenes");
     list.replaceChildren();
-    if (!this._studioScenes.length) {
+    if (!this._studioAvailable) {
+      const empty = document.createElement("p");
+      empty.textContent = "Studio-Szenen sind nach dem Neustart von Home Assistant verfügbar.";
+      list.append(empty);
+    } else if (!this._studioScenes.length) {
       const empty = document.createElement("p");
       empty.textContent = "Noch keine Studio-Szene gespeichert.";
       list.append(empty);
@@ -272,11 +281,20 @@ class VectraStudioPanel extends HTMLElement {
   async _loadStudioScenes(token = this._selection) {
     const tankId = this._tankId();
     if (!tankId) return;
-    const result = await this._hass.callWS({type: "vectra_studio/studio_scene_list", tank_device_id: tankId});
-    if (token !== this._selection) return;
-    this._studioScenes = result.scenes || [];
-    this._studioActive = result.active || null;
-    this._renderStudioScenes();
+    try {
+      const result = await this._hass.callWS({type: "vectra_studio/studio_scene_list", tank_device_id: tankId});
+      if (token !== this._selection) return;
+      this._studioAvailable = true;
+      this._studioScenes = result.scenes || [];
+      this._studioActive = result.active || null;
+      this._renderStudioScenes();
+    } catch (err) {
+      if (token !== this._selection) return;
+      this._studioAvailable = false;
+      this._renderStudioScenes();
+      this._message(`Live-Werte und Mobius-Szenen sind verfügbar. Studio-Szenen werden nach einem Home-Assistant-Neustart aktiviert: ${err.message || err}`, true);
+      this._updateLive();
+    }
   }
   _duration(prefix) {
     const seconds = studioDurationSeconds(this.$(`${prefix}-minutes`).value, this.$(`${prefix}-infinite`).checked);
@@ -330,7 +348,7 @@ class VectraStudioPanel extends HTMLElement {
     const member = this._member;
     this.$("open").disabled = true;
     try {
-      await import("/vectra_studio_frontend/vectra-studio-schedule-card.js?v=0.2.0");
+      await import("/vectra_studio_frontend/vectra-studio-schedule-card.js?v=0.2.1");
       if (token !== this._selection || !this._group) return;
       const card = document.createElement("vectra-studio-schedule-card");
       card.setConfig({type: "custom:vectra-studio-schedule-card", device_id: member.device_id});

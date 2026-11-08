@@ -110,6 +110,12 @@ class StudioSceneManager:
         if errors:
             raise HomeAssistantError(f"Started {source_scene!r}, but some device writes failed: {'; '.join(errors)}")
 
+        # Unlike the native select entity, this path bypasses its refresh
+        # helper. Refresh now so the state displayed in HA reflects the scene
+        # request without waiting for the regular polling interval.
+        for coordinator in runtime.coordinators.values():
+            await coordinator.async_request_refresh()
+
         ends_at = (dt_util.utcnow() + timedelta(seconds=duration_seconds)).isoformat() if duration_seconds else None
         self._active[entry.entry_id] = {
             "label": label,
@@ -136,6 +142,8 @@ class StudioSceneManager:
             raise HomeAssistantError(f"Could not resume the normal schedule: {'; '.join(errors)}")
         if errors:
             raise HomeAssistantError(f"Some devices could not resume the normal schedule: {'; '.join(errors)}")
+        for coordinator in runtime.coordinators.values():
+            await coordinator.async_request_refresh()
         self._cancel_timer(entry.entry_id)
         self._active.pop(entry.entry_id, None)
         await self._async_save()
