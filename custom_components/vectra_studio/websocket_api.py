@@ -29,6 +29,7 @@ from .const import DOMAIN
 from .coordinator import MobiusDeviceCoordinator, used_scenes
 from .gateway_registry import params_with_parent_serial
 from .studio_scenes import async_get_scene_manager
+from .vectra_control import read_control_state
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -597,9 +598,29 @@ async def handle_parse_schedule_mob(
     )
 
 
+@websocket_api.websocket_command({
+    vol.Required("type"): "vectra_studio/read_control_state",
+    vol.Required("device_id"): str,
+})
+@websocket_api.async_response
+async def handle_read_control_state(hass, connection, msg):
+    """Explicit, read-only status inspection for the selected pump."""
+    try:
+        serial, _runtime, coordinator = _resolve_member(hass, msg["device_id"])
+        device = await coordinator.async_get_connected_device()
+        result = await read_control_state(device)
+        result["serial"] = serial
+        connection.send_result(msg["id"], result)
+    except ScheduleGroupError as err:
+        connection.send_error(msg["id"], err.code, err.message)
+    except Exception as err:
+        connection.send_error(msg["id"], _ERR.ERR_HOME_ASSISTANT_ERROR, str(err))
+
+
 def async_register_websocket_commands(hass: HomeAssistant) -> None:
     """Registers the commands (called from async_setup())."""
     for command in (
+        handle_read_control_state,
         handle_resolve_schedule_groups, handle_read_schedule_group,
         handle_export_schedule_group_mob, handle_parse_schedule_mob,
         handle_studio_scene_list, handle_studio_scene_create, handle_studio_scene_delete,

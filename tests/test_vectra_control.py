@@ -24,7 +24,7 @@ class Point:
 class ControlTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         fake = ModuleType("mobius")
-        fake.OperationState = SimpleNamespace(Schedule=3)
+        fake.OperationState = IntEnum("OperationState", {"Scene": 2, "Schedule": 3})
         fake.PumpMode = Mode
         fake.PumpParam = SimpleNamespace(MaxSpeed=0)
         fake.Model = SimpleNamespace(VectraM2=SimpleNamespace(name="VectraM2"))
@@ -58,8 +58,27 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_scene_and_unknown_override_rejected_before_write(self):
         self.device.get_operation_state.return_value = 2
-        with self.assertRaisesRegex(ValueError, "Feed/scene"):
+        with self.assertRaisesRegex(ValueError, "reported operation_state=2"):
             await self.module.set_constant_percent(self.device, 40, self.backup, 100)
+        self.device.set_pump_schedule.assert_not_awaited()
+
+    async def test_raw_status_reports_unknown_and_failed_reads_without_writes(self):
+        async def get(attribute):
+            if attribute == 104:
+                return [b"\x07"]
+            if attribute == 105:
+                raise IOError("FSCI rejected 105")
+            if attribute == 700:
+                return [b"\xc8\x00"]
+            return []
+        self.device.get_attribute = AsyncMock(side_effect=get)
+        data = (await self.module.read_control_state(self.device))["attributes"]
+        self.assertEqual(data["operation_state"]["value"], 7)
+        self.assertEqual(data["operation_state"]["raw_hex"], "07")
+        self.assertEqual(data["operation_state"]["label"], "unknown")
+        self.assertIn("FSCI", data["operation_mode"]["error"])
+        self.assertEqual(data["motor_speed"]["percent"], 20)
+        self.assertIsNone(data["pump_override_mode"]["value"])
         self.device.set_pump_schedule.assert_not_awaited()
 
     async def test_invalid_values_never_contact_device(self):

@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.4.1
+
+- Neuer Button „Betriebszustand auslesen“: liest Attribute 104, 105, 705,
+  401 und 700 direkt per Bluetooth ohne Schreibbefehle. Zeigt Rohbytes,
+  numerische Werte, Zeitstempel und Fehler je Attribut auch bei unbekannten
+  Firmwarewerten an.
+- Eine fehlgeschlagene Schedule-Prüfung meldet den tatsächlich dekodierten
+  Zustand; sie behauptet nicht mehr pauschal, dass Feed aktiv sei.
+
 ## 0.4.0
 
 - Neue M2-NumberEntity und Studio-Bedienung für 1–100 % Konstantleistung.

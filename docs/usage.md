@@ -4,6 +4,13 @@
 
 ## Konstantleistung ab v0.4.0
 
+Ab v0.4.1 kann **Betriebszustand auslesen** unabhängig von der Leistungsänderung
+betätigt werden. Die Controller-Diagnose enthält Rohbytes und Zahlenwerte für
+Betriebszustand, Betriebsmodus, Override, Szene und Motorgeschwindigkeit. Fehler
+einzelner Attribute bleiben sichtbar, ohne andere Ergebnisse zu verwerfen.
+Zum Untersuchen einer blockierten Änderung diese Ausgabe kopieren. Es werden
+keine Szenen gestartet/beendet und keine Einstellungen geschrieben.
+
 In Mobius zuerst einen normalen ConstantSpeed-Zeitplan einrichten und Feed sowie
 Overrides beenden. Danach Mobius schließen und Vectra Studio aktivieren. Die
 neue Entität **Konstantleistung (aktueller Zeitplanblock)** akzeptiert ganze
