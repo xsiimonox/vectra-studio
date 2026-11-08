@@ -2,6 +2,18 @@
 
 [Zur Übersicht](../README.md)
 
+## Download schlägt für Version `596924f` fehl
+
+Version 0.1.0 setzte `zip_release: true`, obwohl ohne aktivierte Vorabversionen
+kein regulärer Release ausgewählt wurde. HACS versuchte den Commit zu installieren,
+für den kein Release-ZIP existiert. Ab 0.1.1 ist diese Release-ZIP-Abhängigkeit entfernt.
+
+In HACS die Repository-Seite öffnen, im Menü **Informationen aktualisieren / Update
+information** ausführen und erneut herunterladen. Falls angeboten **Beta-Versionen
+anzeigen** aktivieren und **v0.1.1** wählen; alternativ den aktuellen Standardbranch.
+Bleibt noch die alte Auswahl sichtbar, die HACS-Seite neu laden und nötigenfalls
+Home Assistant neu starten. Die neue Konfiguration muss vor dem Download eingelesen sein.
+
 ## Integration erscheint nicht
 
 Nach Installation Home Assistant vollständig neu starten. Bei manueller Installation

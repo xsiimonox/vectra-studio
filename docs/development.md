@@ -32,6 +32,7 @@ npm --prefix frontend-src run build
 (cd frontend-src && node --test)
 npm test
 npm run check
+python3 -m unittest discover -s tests -p "test_*.py"
 python3 tools/validate_release.py --package
 ```
 
@@ -54,7 +55,7 @@ minifizierten JavaScript vornehmen. Die Herkunftshinweise und GPL-Lizenz erhalte
 
 1. Versionsnummer im Manifest erhöhen und `CHANGELOG.md` ergänzen.
 2. Alle Prüfungen ausführen und Änderungen auf `main` committen.
-3. Einen passenden Tag setzen und pushen, etwa `v0.1.0`.
+3. Einen passenden Tag setzen und pushen, etwa `v0.1.1`.
 4. Der Release-Workflow prüft den Tag gegen das Manifest, baut und testet die
    Karten und veröffentlicht die ZIP-Dateien als **Vorabversion**.
 5. HACS-Beta-Installation und danach Hardwaretests durchführen.
@@ -63,7 +64,9 @@ Der Workflow markiert Releases bewusst als Vorabversion, solange das Projekt
 experimentell ist. Ein stabiler Release erfordert eine dokumentierte Hardware-Erprobung
 und eine ausdrückliche Anpassung dieses Veröffentlichungsprozesses.
 
-`vectra_studio.zip` enthält nur die Integrationsdateien für HACS. Das zweite ZIP
+`vectra_studio.zip` enthält nur die Integrationsdateien für eine manuelle Installation.
+HACS selbst lädt die Dateien direkt aus dem Repository, damit auch Branch- und
+Commit-Installationen ohne vorhandenes Release-Asset funktionieren. Das zweite ZIP
 enthält den Konfigurationspfad, die Dokumentation, Buildskripte und Editor-Quellen.
 Zum kompletten Stand gehört außerdem das Git-Repository mit dem entsprechenden Tag.
 

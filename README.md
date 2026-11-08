@@ -1,12 +1,14 @@
 # Vectra Studio
 
+<p align="center"><img src="assets/vectra-studio-logo.png" width="180" alt="Vectra Studio – V mit Wasserströmung"></p>
+
 [![Prüfungen](https://github.com/xsiimonox/vectra-studio/actions/workflows/validate.yml/badge.svg)](https://github.com/xsiimonox/vectra-studio/actions/workflows/validate.yml)
 [![Lizenz: GPL-2.0](https://img.shields.io/badge/Lizenz-GPL--2.0-blue.svg)](LICENSE)
 
 Lokale Home-Assistant-Integration für EcoTech Vectra-Pumpen mit einer eigenen
 Oberfläche in der Seitenleiste: Pumpenstatus, Szenen und Tagesprogramme an einem Ort.
 
-**Experimentell:** Version 0.1.0 ist lokal auf Quellcode- und Frontend-Ebene geprüft.
+**Experimentell:** Version 0.1.1 ist lokal auf Quellcode- und Frontend-Ebene geprüft.
 Ein Laufzeittest auf Home Assistant und ein Hardwaretest mit der Vectra M2 stehen
 noch aus. Unterstützungsangaben sind keine Bestätigung für jede Firmware.
 
@@ -38,7 +40,7 @@ mit Home Assistant OS und Core 2026.10.1 vorgesehen.
 
 1. In HACS das Menü **Benutzerdefinierte Repositories / Custom repositories** öffnen.
 2. `https://github.com/xsiimonox/vectra-studio` als Typ **Integration** hinzufügen.
-3. Falls 0.1.0 nur als Vorabversion angeboten wird, in HACS **Beta-Versionen anzeigen** aktivieren.
+3. Falls 0.1.1 nur als Vorabversion angeboten wird, in HACS **Beta-Versionen anzeigen** aktivieren.
 4. **Vectra Studio** herunterladen und Home Assistant neu starten.
 5. Die Mobius-App schließen. Einen bereits eingerichteten `ha-mobius`-Eintrag für
    dasselbe Aquarium deaktivieren, damit nur eine Integration die Verbindung verwaltet.
@@ -52,6 +54,11 @@ HACS-Standardkatalog ist nicht beantragt; die Installation erfolgt als benutzerd
 [Bedienung und erster Pumpentest](docs/usage.md) ·
 [Bluetooth und Fehlersuche](docs/troubleshooting.md)
 
+HACS lädt die enthaltenen Integrationsdateien direkt aus dem Repository.
+Damit funktionieren sowohl Release-Tags als auch der Standardbranch ohne ein
+zusätzliches Release-ZIP. Bei einem Fehler mit `596924f` zuerst in HACS
+**Informationen aktualisieren** wählen und danach erneut herunterladen.
+
 ## Manuelle Installation
 
 Den Ordner `custom_components/vectra_studio` nach
@@ -59,7 +66,7 @@ Den Ordner `custom_components/vectra_studio` nach
 und ab Schritt 5 oben fortfahren. Die gebauten Dashboard-Karten sind im Repository
 enthalten; für die Installation ist kein Node.js nötig.
 
-Das Release enthält außerdem `vectra-studio-0.1.0.zip`. Es wird direkt im
+Das Release enthält außerdem `vectra-studio-0.1.1.zip`. Es wird direkt im
 Home-Assistant-Konfigurationsverzeichnis entpackt und enthält den Pfad
 `custom_components/vectra_studio/` bereits. ZIP-Layouts und Updates erklärt die
 [Installationsanleitung](docs/installation.md).
@@ -75,6 +82,7 @@ npm --prefix frontend-src run build
 (cd frontend-src && node --test)
 npm test
 npm run check
+python3 -m unittest discover -s tests -p "test_*.py"
 python3 tools/validate_release.py --package
 ```
 

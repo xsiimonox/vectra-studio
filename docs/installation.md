@@ -48,7 +48,8 @@ Es gibt zwei ZIP-Dateien mit verschiedenen Zielen:
 | `vectra_studio.zip` | Nur die Integration, Manifest direkt im ZIP | `/config/custom_components/vectra_studio/` |
 | `vectra-studio-VERSION.zip` | Konfigurationspfad, Dokumentation und Editor-Quellen | `/config/` |
 
-HACS verwendet automatisch `vectra_studio.zip`. GitHubs automatisch erzeugte
+HACS installiert seit 0.1.1 direkt aus `custom_components/vectra_studio` im
+Repository; die ZIP-Dateien sind zusätzliche manuelle Downloads. GitHubs automatisch erzeugte
 **Source code**-Archive sind vollständige Repository-Kopien; daraus nur den
 Integrationsordner kopieren.
 

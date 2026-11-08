@@ -16,6 +16,8 @@ die Integration `ha-mobius` muss nicht zusätzlich installiert werden.
 
 - Eigene HA-Domain `vectra_studio`, eigener Service- und WebSocket-Namensraum.
 - Eigener Eintrag und eigene native Oberfläche in der HA-Seitenleiste.
+- Eigenes generiertes Logo; Motiv und Erzeugungsprompt unter `assets/logo-generation.json`.
+- HACS verwendet ab 0.1.1 Repository-Dateien statt eines zwingenden Release-Assets.
 - Pumpenübersicht mit Live-Werten, Gerätauswahl und Szenenbedienung.
 - Der Zeitplan-Editor aus ha-mobius ist enthalten und für den eigenen
   Namensraum angepasst; er ist keine vollständige Eigenentwicklung.

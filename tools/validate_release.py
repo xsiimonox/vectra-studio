@@ -23,7 +23,8 @@ def main():
     if args.tag:
         assert args.tag == f"v{manifest['version']}", "Tag and manifest version must match"
     hacs = json.loads((ROOT / "hacs.json").read_text())
-    assert hacs["zip_release"] and hacs["filename"] == "vectra_studio.zip"
+    assert not hacs.get("zip_release", False), "Commit installs must not depend on release assets"
+    assert "filename" not in hacs, "Use repository content for HACS downloads"
     assert f"## {manifest['version']}" in (ROOT / "CHANGELOG.md").read_text()
     assert not (ROOT / "custom_components" / "mobius").exists(), "Do not ship two Bluetooth owners"
     for path in COMPONENT.rglob("*.py"):
@@ -35,7 +36,7 @@ def main():
         if "schedule" in name:
             assert "vectra_studio/" in source
         assert not re.search(r'''["']mobius(?:/|["'])''', source), "Stale backend namespace"
-    for name in ["LICENSE", "panel.py", "panel/model.js", "panel/vectra-studio.js", "translations/de.json"]:
+    for name in ["LICENSE", "panel.py", "panel/model.js", "panel/vectra-studio.js", "translations/de.json", "panel/vectra-studio-logo.png", "brand/icon.png", "brand/icon@2x.png"]:
         assert (COMPONENT / name).is_file(), f"Missing {name}"
     assert (ROOT / "frontend-src" / "package.json").is_file(), "Include editor source"
     assert (ROOT / "NOTICE.md").is_file()
@@ -51,7 +52,7 @@ def main():
                     archive.write(path, path.relative_to(ROOT))
             for name in ["NOTICE.md", "README.md", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "hacs.json", "package.json"]:
                 archive.write(ROOT / name, name)
-            for directory in ["frontend-src", "docs", "examples", "tools", "tests", ".github"]:
+            for directory in ["frontend-src", "docs", "examples", "assets", "tools", "tests", ".github"]:
                 for path in sorted((ROOT / directory).rglob("*")):
                     if path.is_file() and not {"node_modules", "__pycache__"}.intersection(path.parts):
                         archive.write(path, path.relative_to(ROOT))
