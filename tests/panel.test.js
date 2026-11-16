@@ -37,12 +37,17 @@ test("initial load is read-only; live values and device labels are rendered safe
   assert.equal(panel.$("content").hidden, false);
   assert.equal(panel.$("speed").textContent, "45 %");
   assert.equal(panel.$("flow").textContent, "—");
+  assert.equal(panel.$("dial-value").textContent, "45");
+  panel.$("power-slider").value = "60";
+  panel.$("power-slider").dispatchEvent(new window.Event("input"));
+  assert.equal(panel.$("power").value, "60");
   assert.equal(panel.$("device").querySelector("img"), null);
   assert.match(panel.$("device").textContent, /<img/);
   assert.deepEqual(writes, []);
   hass.states["sensor.speed"].state = "unavailable";
   panel.hass = hass;
   assert.equal(panel.$("speed").textContent, "—");
+  assert.equal(panel.$("dial-value").textContent, "—");
   panel.remove();
 });
 
@@ -105,7 +110,7 @@ test("without the M2 number entity telemetry remains available and scenes stay l
   assert.equal(panel.$("content").hidden, false);
   assert.equal(panel.$("speed").textContent, "45 %");
   assert.equal(panel.$("start"), null);
-  assert.match(panel.shadowRoot.textContent, /Szenen und Pause gesperrt/);
+  assert.match(panel.shadowRoot.textContent, /Stoppen und Wiederanlaufen sind noch nicht bestätigt/);
   assert.deepEqual(writes, []);
   panel.remove();
 });

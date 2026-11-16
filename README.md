@@ -1,5 +1,10 @@
 # Vectra Studio
 
+**v0.6.0:** Neues responsives Dashboard mit Ist-Leistungsring, Prozentregler,
+App-Freigabe und sichtbaren Entitäts-IDs. Pause und dauerhaftes Aus sind noch
+nicht funktionsfähig; die Oberfläche kennzeichnet sie als deaktivierte Vorschau.
+[Automationen und verbleibende Voraussetzungen](docs/automations.md).
+
 Neu in **v0.5.0**: Schalter **Für Mobius-App freigeben** zum Trennen und
 Wiederverbinden der HA-Bluetooth-Anbindung sowie M2-Live-Konstantleistung auf
 Basis eines Mobius-Mitschnitts. [Bedienung](docs/usage.md).

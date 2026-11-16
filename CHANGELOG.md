@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.6.0
+
+- Neue dunkle, responsive Studio-Oberfläche mit Leistungsring, getrennten
+  Ist-/Sollwerten und Schieberegler. Schreiben erst bei „Übernehmen“.
+- App-Freigabestatus, echte Entitäts-IDs für Automationen und aufklappbare Diagnose.
+- Pause/Aus als deaktivierte Vorschau, bis Stop und Wiederanlauf an der M2
+  belegt sind. Noch keine funktionsfähigen Pause-/Aus-Entitäten.
+
 ## 0.5.1
 
 - Leere Fehlermeldungen bei Leistungsänderungen zeigen jetzt Fehlerklasse und
