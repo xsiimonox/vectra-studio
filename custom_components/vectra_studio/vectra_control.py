@@ -11,6 +11,15 @@ import struct
 from mobius import OperationState, PumpMode, PumpParam, PrimitiveType, Model
 
 
+async def control_step(label, operation):
+    """Preserve the failing operation even for empty TimeoutError messages."""
+    try:
+        return await operation
+    except Exception as err:
+        detail = str(err) or "keine weitere Fehlermeldung vom Bluetooth-Transport"
+        raise RuntimeError(f"{label}: {type(err).__name__}: {detail}") from err
+
+
 async def read_control_state(device):
     """Read wire bytes directly; unknown/failed reads are never called Feed.
 
@@ -87,18 +96,19 @@ def live_constant_payload(value):
 async def set_constant_percent(device, value, save_backup, minute_of_day):
     """Write once, then verify stored points AND live state; no blind rollback."""
     raw = percent_to_permille(value)
-    info = await device.get_device_info()
+    info = await control_step("Geräteidentität lesen", device.get_device_info())
     if info.get("model") != Model.VectraM2.name or info.get("primitive_type") != PrimitiveType.VectraV1.name:
         raise ValueError("This control supports only VectraM2 / VectraV1")
-    state = await device.get_operation_state()
+    state = await control_step("Betriebszustand lesen (104)", device.get_operation_state())
     if state == OperationState.LiveDemo:
-        override = await device.get_pump_override_mode()
+        override = await control_step("Override lesen (705)", device.get_pump_override_mode())
         if override is None or override.value != 0:
             raise ValueError("MaxSpeed: controller override active or unknown")
-        if await device.get_operation_mode() != "ConstantSpeed":
+        if await control_step("Betriebsmodus lesen (105)", device.get_operation_mode()) != "ConstantSpeed":
             raise ValueError("MaxSpeed: LiveDemo must be in ConstantSpeed mode")
         payload = live_constant_payload(value)
-        await device.set_attribute(407, payload)
+        await control_step("Live-Leistung schreiben (407), ACK abwarten; Pumpenzustand bei Fehler unbestätigt",
+                           device.set_attribute(407, payload))
         # ACK/CRC validation is provided by set_attribute. Some firmware
         # reports a stale 407 value: motor readback is the decisive check.
         return raw

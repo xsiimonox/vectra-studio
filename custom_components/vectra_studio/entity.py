@@ -142,13 +142,15 @@ async def async_run_on_device(
 
     The action may have written a setting that is only read every
     STATIC_REFRESH_INTERVAL, so the next poll reads those again."""
+    phase = "Bluetooth-Verbindung aufbauen"
     try:
         device = await coordinator.async_get_connected_device()
+        phase = "Geräteaktion ausführen"
         result = await action(device)
     except HomeAssistantError:
         raise
     except Exception as err:
-        raise HomeAssistantError(f"{failure}: {err}") from err
+        raise HomeAssistantError(f"{failure}: {phase}: {type(err).__name__}: {str(err) or 'keine weitere Fehlermeldung'}") from err
     finally:
         coordinator.configuration_cache.invalidate_static()
     return result

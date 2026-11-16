@@ -113,6 +113,7 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
         self._attr_device_info = device_info
         self._lock = asyncio.Lock()
         self._verification = "not_requested"
+        self._last_control_error = None
 
     @property
     def native_value(self):
@@ -127,6 +128,7 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
     @property
     def extra_state_attributes(self):
         return {"verification": self._verification,
+                "last_control_error": self._last_control_error,
                 "writes_to": "LiveDemo: 407; Schedule: active ConstantSpeed block",
                 "backup_storage": f"vectra_studio.schedule_backup_{self._serial}"}
 
@@ -137,6 +139,7 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
                 await Store(self.hass, 1, f"vectra_studio.schedule_backup_{self._serial}").async_save(
                     {"serial": self._serial, "points_hex": [p.encode().hex() for p in points]})
             self._verification = "pending"
+            self._last_control_error = None
             try:
                 now = dt_util.now()
                 raw = await async_run_on_device(
@@ -156,8 +159,9 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
                 raise HomeAssistantError("MaxSpeed: command accepted, but motor/state did not confirm requested percentage")
             except Exception as err:
                 self._verification = "failed_or_unconfirmed"
-                _LOGGER.error("Vectra %s MaxSpeed=%r%% failed: %s", self._serial, value, err)
-                raise HomeAssistantError(str(err)) from err
+                self._last_control_error = str(err) or type(err).__name__
+                _LOGGER.exception("Vectra %s MaxSpeed=%r%% failed: %s", self._serial, value, self._last_control_error)
+                raise HomeAssistantError(self._last_control_error) from err
             finally:
                 self.async_write_ha_state()
 

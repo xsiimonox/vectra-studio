@@ -73,6 +73,20 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             await self.module.set_constant_percent(self.device, 40, self.backup, 100)
         self.device.set_pump_schedule.assert_not_awaited()
 
+    async def test_empty_identity_timeout_reports_stage_and_never_writes(self):
+        self.device.get_device_info.side_effect = TimeoutError()
+        with self.assertRaisesRegex(RuntimeError, "Geräteidentität lesen: TimeoutError"):
+            await self.module.set_constant_percent(self.device, 80, self.backup, 100)
+        self.device.set_pump_schedule.assert_not_awaited()
+
+    async def test_empty_live_ack_timeout_marks_write_as_unconfirmed(self):
+        self.device.get_operation_state.return_value = 1
+        self.device.get_operation_mode = AsyncMock(return_value="ConstantSpeed")
+        self.device.set_attribute = AsyncMock(side_effect=TimeoutError())
+        with self.assertRaisesRegex(RuntimeError, "407.*unbestätigt: TimeoutError"):
+            await self.module.set_constant_percent(self.device, 80, self.backup, 100)
+        self.assertEqual(self.device.set_attribute.await_count, 1)
+
     async def test_raw_status_reports_unknown_and_failed_reads_without_writes(self):
         async def get(attribute):
             if attribute == 104:

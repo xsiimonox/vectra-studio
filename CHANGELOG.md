@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.5.1
+
+- Leere Fehlermeldungen bei Leistungsänderungen zeigen jetzt Fehlerklasse und
+  Schritt: Verbindungsaufbau, Identität, Zustand, Override, Modus oder Live-Schreiben
+  samt ACK-Warten. Timeout beim Schreiben wird als unbestätigter Pumpenzustand
+  markiert; kein automatischer erneuter Schreibversuch.
+- Vollständiger Fehler-Trace im HA-Protokoll und `last_control_error` an der
+  Leistungsentität. Diese Änderung verbessert die Diagnose; sie behauptet keine
+  Behebung der noch ungeklärten Transportursache.
+
 ## 0.5.0
 
 - Schalter „Vectra Studio – Für Mobius-App freigeben“ und Studio-Schaltfläche:
