@@ -1,5 +1,9 @@
 # Vectra Studio
 
+Neu in **v0.5.0**: Schalter **Für Mobius-App freigeben** zum Trennen und
+Wiederverbinden der HA-Bluetooth-Anbindung sowie M2-Live-Konstantleistung auf
+Basis eines Mobius-Mitschnitts. [Bedienung](docs/usage.md).
+
 <p align="center"><img src="assets/vectra-studio-logo.png" width="180" alt="Vectra Studio – V mit Wasserströmung"></p>
 
 [![Prüfungen](https://github.com/xsiimonox/vectra-studio/actions/workflows/validate.yml/badge.svg)](https://github.com/xsiimonox/vectra-studio/actions/workflows/validate.yml)

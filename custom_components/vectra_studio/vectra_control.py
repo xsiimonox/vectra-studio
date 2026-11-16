@@ -6,6 +6,7 @@ setting. The library supplies padded 16-byte points and validates FSCI ACKs.
 from copy import deepcopy
 from math import isfinite
 from datetime import datetime, timezone
+import struct
 
 from mobius import OperationState, PumpMode, PumpParam, PrimitiveType, Model
 
@@ -70,6 +71,19 @@ def signature(points):
     return [point.encode() for point in points]
 
 
+def live_constant_payload(value):
+    """37-byte M2 payload observed in Mobius HCI capture, 2026-11-16.
+
+    Prefix and 30-unit field copied from successful app writes. The capture
+    proves no semantics beyond this specific constant-speed command.
+    """
+    raw = percent_to_permille(value)
+    payload = bytearray(37)
+    payload[0], payload[4], payload[6], payload[24] = 5, 1, 30, 1
+    struct.pack_into("<h", payload, 25, raw)
+    return bytes(payload)
+
+
 async def set_constant_percent(device, value, save_backup, minute_of_day):
     """Write once, then verify stored points AND live state; no blind rollback."""
     raw = percent_to_permille(value)
@@ -77,6 +91,17 @@ async def set_constant_percent(device, value, save_backup, minute_of_day):
     if info.get("model") != Model.VectraM2.name or info.get("primitive_type") != PrimitiveType.VectraV1.name:
         raise ValueError("This control supports only VectraM2 / VectraV1")
     state = await device.get_operation_state()
+    if state == OperationState.LiveDemo:
+        override = await device.get_pump_override_mode()
+        if override is None or override.value != 0:
+            raise ValueError("MaxSpeed: controller override active or unknown")
+        if await device.get_operation_mode() != "ConstantSpeed":
+            raise ValueError("MaxSpeed: LiveDemo must be in ConstantSpeed mode")
+        payload = live_constant_payload(value)
+        await device.set_attribute(407, payload)
+        # ACK/CRC validation is provided by set_attribute. Some firmware
+        # reports a stale 407 value: motor readback is the decisive check.
+        return raw
     if state != OperationState.Schedule:
         raise ValueError(f"MaxSpeed: Schedule required; reported operation_state={state!r}. "
                          "Use 'Betriebszustand auslesen' for raw controller data; no write attempted")

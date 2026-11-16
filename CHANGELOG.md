@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.5.0
+
+- Schalter „Vectra Studio – Für Mobius-App freigeben“ und Studio-Schaltfläche:
+  AN entlädt die Pumpenverbindungen aller aktiven Vectra-Studio-Einträge; AUS
+  lädt sie wieder. Schalter bleibt unabhängig von den Pumpenentitäten verfügbar.
+  Freigabe bleibt über Neustarts erhalten. Manuell deaktivierte Einträge werden
+  nicht automatisch aktiviert.
+- M2-LiveDemo-Konstantleistung verwendet den 37-Byte-Befehl auf Attribut 407
+  aus einem erfolgreichen Mobius-HCI-Mitschnitt (70→80→70 %). FSCI/CRC-Prüfung
+  der Bibliothek und anschließende Motorwertprüfung bleiben erforderlich.
+  Der Live-Befehl speichert keinen Zeitplan. Schedule-Schreibweg bleibt separat.
+- Keine privaten Bluetooth-Mitschnitte im Repository. Automatisierte Tests für
+  den beobachteten Payload und den Freigabe-/Wiederverbindungsablauf.
+
 ## 0.4.2
 
 - Controller-Diagnose liest zusätzlich LiveDemoScene (407), LiveDemoTimeout

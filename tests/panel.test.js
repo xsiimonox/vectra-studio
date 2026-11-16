@@ -55,6 +55,23 @@ test("empty setup offers installation instructions without imaginary telemetry",
   panel.remove();
 });
 
+test("app handoff button remains usable without pump metadata", async () => {
+  const {panel, hass, writes} = setup({
+    states: {"switch.app_access": {state: "on"}},
+    callWS: async message => message.type === "config/entity_registry/list" ? [
+      {platform: "vectra_studio", unique_id: "vectra_studio_mobius_app_access", entity_id: "switch.app_access"}
+    ] : [],
+  });
+  await flush();
+  assert.equal(panel.$("app-access").disabled, false);
+  await panel._toggleAppAccess();
+  assert.deepEqual(writes[0], ["switch", "turn_off", {entity_id: "switch.app_access"}]);
+  hass.states["switch.app_access"].state = "off";
+  panel.hass = hass;
+  assert.match(panel.$("app-access").textContent, /Für Mobius-App freigeben/);
+  panel.remove();
+});
+
 test("late metadata from a previously selected pump cannot replace current selection", async () => {
   const {panel} = setup();
   await flush();
@@ -78,7 +95,7 @@ test("pump selection resolves tank-wide metadata through its parent tank", async
     return message.type === "config/device_registry/list" ? devices : {groups: [group]};
   }});
   await flush();
-  assert.deepEqual(calls[1], {type: "vectra_studio/resolve_schedule_groups", device_id: "tank"});
+  assert.deepEqual(calls.find(c => c.type === "vectra_studio/resolve_schedule_groups"), {type: "vectra_studio/resolve_schedule_groups", device_id: "tank"});
   panel.remove();
 });
 
@@ -121,6 +138,6 @@ test("a pump without a tank relationship explains the setup issue without callin
   }});
   await flush();
   assert.match(panel.$("message").textContent, /keinem Aquarium-Gerät zugeordnet/);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.some(c => c.type.startsWith("vectra_studio/")), false);
   panel.remove();
 });

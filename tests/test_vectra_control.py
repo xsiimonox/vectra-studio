@@ -24,7 +24,7 @@ class Point:
 class ControlTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         fake = ModuleType("mobius")
-        fake.OperationState = IntEnum("OperationState", {"Scene": 2, "Schedule": 3})
+        fake.OperationState = IntEnum("OperationState", {"LiveDemo": 1, "Scene": 2, "Schedule": 3})
         fake.PumpMode = Mode
         fake.PumpParam = SimpleNamespace(MaxSpeed=0)
         fake.Model = SimpleNamespace(VectraM2=SimpleNamespace(name="VectraM2"))
@@ -55,6 +55,17 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.device.get_pump_schedule.side_effect = [self.original, self.original]
         with self.assertRaisesRegex(ValueError, "readback differs"):
             await self.module.set_constant_percent(self.device, 40, self.backup, 100)
+
+    async def test_live_payload_matches_captured_80_percent_command(self):
+        expected = bytes.fromhex("0500000001001e000000000000000000000000000000000001200300000000000000000000")
+        self.assertEqual(self.module.live_constant_payload(80), expected)
+        self.device.get_operation_state.return_value = 1
+        self.device.get_operation_mode = AsyncMock(return_value="ConstantSpeed")
+        self.device.set_attribute = AsyncMock()
+        self.assertEqual(await self.module.set_constant_percent(self.device, 80, self.backup, 100), 800)
+        self.device.set_attribute.assert_awaited_once_with(407, expected)
+        self.device.set_pump_schedule.assert_not_awaited()
+        self.backup.assert_not_awaited()
 
     async def test_scene_and_unknown_override_rejected_before_write(self):
         self.device.get_operation_state.return_value = 2

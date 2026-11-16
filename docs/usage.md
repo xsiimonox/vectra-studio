@@ -2,6 +2,31 @@
 
 [Zur Übersicht](../README.md)
 
+## Mobius-App freigeben ab v0.5.0
+
+Im Studio **Für Mobius-App freigeben** einschalten oder in HA den Schalter
+**Vectra Studio – Für Mobius-App freigeben** verwenden. AN pausiert die
+HA-Anbindung aller aktiven Vectra-Studio-Aquarien und trennt Bluetooth; Sensoren
+werden dabei nicht verfügbar. Der Schalter selbst bleibt bedienbar, auch nach
+einem HA-Neustart. Es werden keine Pumpenparameter geändert.
+
+Danach Mobius öffnen. Zur Rückkehr Mobius vollständig schließen und die
+App-Freigabe in HA ausschalten. Die Pumpenanbindung wird erneut geladen.
+Manuell deaktivierte Integrationseinträge werden dabei nicht aktiviert.
+
+## Live-Konstantleistung ab v0.5.0
+
+Im Zustand LiveDemo / ConstantSpeed sendet der Prozentregler den im Mobius-
+Mitschnitt belegten Befehl auf Attribut 407. Die Bibliothek prüft die Antwort;
+anschließend muss die gemeldete Motorleistung den Wert bestätigen. Ein Fehler
+kann auch bedeuten, dass ein Befehl angenommen wurde, die Prüfung aber scheiterte.
+
+Diese Live-Änderung ist keine dauerhafte Zeitplanänderung. Die App schreibt bei
+„Speichern“ zusätzlich Schedule1; Vectra Studio führt diesen zusätzlichen Schritt
+im LiveDemo-Zustand nicht aus. Die Lebensdauer des Live-Befehls ist bisher nicht
+hardwareseitig verifiziert. Der beobachtete Payload wird unverändert verwendet,
+abgesehen von der Prozentzahl. Der erste HA-Hardwaretest steht noch aus.
+
 ## Konstantleistung ab v0.4.0
 
 Ab v0.4.1 kann **Betriebszustand auslesen** unabhängig von der Leistungsänderung

@@ -2,7 +2,7 @@
 // The panel itself is versioned by panel.py. Version the static dependency too:
 // otherwise Safari may combine a new panel with an old cached model.js and fail
 // module evaluation before it can render anything.
-import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.4.2";
+import {vectraDevices, pumpGroup, displayState, sceneOptions, studioDurationSeconds, formatStudioDuration} from "./model.js?v=0.5.0";
 
 class VectraStudioPanel extends HTMLElement {
   constructor() {
@@ -28,14 +28,15 @@ class VectraStudioPanel extends HTMLElement {
         #message{white-space:pre-wrap;padding:16px;border-radius:12px;background:var(--card-background-color,#fff);margin:16px 0;border:1px solid var(--divider-color,#d4e0e2)}#message.error{border-color:var(--error-color,#c44)}[hidden]{display:none!important}#editor{margin-top:20px}footer{font-size:12px;line-height:1.7;color:var(--secondary-text-color,#667d82);margin-top:28px} .empty{padding:35px 0;max-width:650px}
         @media(max-width:650px){main{padding:24px 16px}.metrics{grid-template-columns:1fr}.metric{padding:18px}.value{font-size:26px}header{padding:12px}.tag{display:none}.fields{grid-template-columns:1fr}.studio-item{align-items:flex-start;flex-wrap:wrap}.studio-item button{margin-left:0}}
       </style>
-      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.4.2</span></header>
+      <header><ha-menu-button></ha-menu-button><img src="/vectra_studio_panel/vectra-studio-logo.png" width="44" height="44" alt=""><strong>Vectra Studio</strong><span>Rückförderung</span><span class="tag">Experimentell · 0.5.0</span></header>
       <main><div class="eyebrow">Dein Aquarium · lokal verbunden</div><h1>Alles im Fluss.</h1><p>Status deiner Vectra an einem Ort.</p>
         <div class="toolbar"><label>Pumpe<select id="device" aria-label="Pumpe auswählen"></select></label><button id="refresh">Geräte neu laden</button></div>
         <div id="message" role="status" aria-live="polite" hidden></div>
+        <div class="box"><h2>Mobius-App</h2><p>Freigabe trennt Vectra Studio für alle eingerichteten Aquarien. Für die Rückkehr zu Home Assistant Mobius zuerst schließen.</p><button id="app-access" disabled>App-Freigabe wird geladen …</button></div>
         <div class="box"><h2>Controller-Diagnose</h2><p>Direktes Auslesen von Betriebszustand, Betriebsmodus, Override, Szene, Motorleistung sowie LiveDemo-Daten, Timer und Timeout. Auch unbekannte Werte und einzelne Lesefehler werden angezeigt.</p><button id="read-control">Betriebszustand auslesen</button><pre id="control-state" style="white-space:pre-wrap;overflow-wrap:anywhere" role="status"></pre></div>
         <section id="empty" class="empty" hidden><h2>Noch keine Vectra gefunden</h2><p>Füge unter Einstellungen → Geräte & Dienste eine Vectra über die Integration „Vectra Studio“ hinzu. Schließe die Mobius-App und prüfe den Bluetooth-Empfang am Pumpencontroller. Lade anschließend die Geräte hier neu.</p></section>
         <section id="content" hidden>
-          <div class="box"><h2>Konstantleistung</h2><p>Ändert dauerhaft den aktuellen ConstantSpeed-Zeitplanblock (1–100 %, ganze Schritte). Andere Blöcke bleiben erhalten. Feed und Controller-Overrides vorher in Mobius beenden. Der Sollwert ist keine Durchflussmessung.</p><input id="power" type="number" min="1" max="100" step="1" aria-label="Konstantleistung in Prozent"><button id="apply-power" disabled>Leistung übernehmen</button><p id="power-result" role="status"></p></div>
+          <div class="box"><h2>Konstantleistung</h2><p>1–100 %, ganze Schritte. Im LiveDemo-Konstantbetrieb wird die Leistung direkt geändert, ohne den Zeitplan zu speichern. Im Schedule-Betrieb wird der aktuelle Konstantleistungsblock dauerhaft geändert. Der Sollwert ist keine Durchflussmessung.</p><input id="power" type="number" min="1" max="100" step="1" aria-label="Konstantleistung in Prozent"><button id="apply-power" disabled>Leistung übernehmen</button><p id="power-result" role="status"></p></div>
           <div class="metrics"><div class="metric"><small>Motordrehzahl</small><div class="value" id="speed">—</div></div><div class="metric"><small>Geschätzter Durchfluss</small><div class="value" id="flow">—</div></div><div class="metric"><small>Aktueller Modus</small><div class="value" id="mode">—</div></div></div>
           <div class="box"><h2>Szenen und Pause gesperrt</h2><p>Die neue Prozentsteuerung prüft den gespeicherten Zeitplan und die gemeldete Motorleistung. Szenenwechsel und automatische Rückkehr bleiben wegen des gemeldeten Controllerverhaltens gesperrt. Ein Hardwaretest der neuen Prozentsteuerung steht noch aus.</p></div>
         </section>
@@ -45,12 +46,14 @@ class VectraStudioPanel extends HTMLElement {
     this.$("device").onchange = () => this._choose(this.$("device").value);
     this.$("apply-power").onclick = () => this._applyPower();
     this.$("read-control").onclick = () => this._readControlState();
+    this.$("app-access").onclick = () => this._toggleAppAccess();
   }
 
   $(id) { return this.shadowRoot.getElementById(id); }
   set narrow(value) { this.shadowRoot.querySelector("ha-menu-button").narrow = value; }
   set hass(hass) {
     this._hass = hass;
+    this._updateAppAccess();
     this.shadowRoot.querySelector("ha-menu-button").hass = hass;
     this._updateLive();
     if (this._card) this._card.hass = hass;
@@ -81,6 +84,11 @@ class VectraStudioPanel extends HTMLElement {
     try {
       const devices = await this._hass.callWS({type: "config/device_registry/list"});
       if (generation !== this._generation) return;
+      const entities = await this._hass.callWS({type: "config/entity_registry/list"});
+      if (generation !== this._generation) return;
+      this._appEntity = Array.isArray(entities) ? entities.find(e => e.platform === "vectra_studio" &&
+        e.unique_id === "vectra_studio_mobius_app_access")?.entity_id : null;
+      this._updateAppAccess();
       this._devices = vectraDevices(devices);
       const select = this.$("device");
       const previous = select.value;
@@ -172,13 +180,33 @@ class VectraStudioPanel extends HTMLElement {
     this.$("power-result").textContent = "Schreiben und Rücklesen werden geprüft …";
     try {
       await this._hass.callService("number", "set_value", {entity_id: this._powerEntity, value});
-      this.$("power-result").textContent = "Zeitplan und gemeldete Motorleistung bestätigt.";
+      this.$("power-result").textContent = "Befehl und gemeldete Motorleistung bestätigt.";
     } catch (err) {
       this.$("power-result").textContent = `Nicht bestätigt: ${err.message || err}`;
     } finally {
       this._busy = false;
       this.$("apply-power").disabled = !this._powerEntity;
       this.$("device").disabled = false;
+    }
+  }
+  _updateAppAccess() {
+    const state = this._hass?.states?.[this._appEntity];
+    this.$("app-access").disabled = this._busy || !state || ["unknown", "unavailable"].includes(state.state);
+    this.$("app-access").textContent = state?.state === "on" ? "App-Freigabe beenden – HA verbinden" : "Für Mobius-App freigeben";
+  }
+  async _toggleAppAccess() {
+    if (!this._appEntity || this._busy) return;
+    this._busy = true;
+    this._updateAppAccess();
+    try {
+      const on = this._hass.states[this._appEntity]?.state === "on";
+      await this._hass.callService("switch", on ? "turn_off" : "turn_on", {entity_id: this._appEntity});
+      this._message(on ? "Mobius schließen. Home Assistant verbindet sich wieder." : "Freigabe angefordert. Mobius kann nach dem Trennen der Verbindung verbinden.");
+    } catch (err) {
+      this._message(`Freigabe fehlgeschlagen: ${err.message || err}`, true);
+    } finally {
+      this._busy = false;
+      this._updateAppAccess();
     }
   }
   async _readControlState() {

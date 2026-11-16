@@ -102,6 +102,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     Lovelace cards."""
     _shared_state(hass)
 
+    from homeassistant.helpers.discovery import async_load_platform
+    hass.async_create_task(async_load_platform(hass, "switch", DOMAIN, {}, config))
+
     # Imported here: these modules import from this one.
     from .websocket_api import async_register_websocket_commands
     async_register_websocket_commands(hass)
@@ -433,6 +436,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     gets a non-blocking first refresh, so an unreachable device never blocks
     the rest of the tank.
     """
+    if entry.options.get("mobius_app_access", False):
+        # Keep the entry enabled, so the independent handoff switch is also
+        # loaded after a restart. No coordinators, scanning or BLE connects.
+        entry.runtime_data = None
+        return True
     semaphore, registry = _shared_state(hass)
 
     devices = entry.data.get(CONF_DEVICES)
@@ -606,6 +614,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # one of the ways out of it.
     _dismiss_single_device_notification(hass, entry)
 
+    if getattr(entry, "runtime_data", None) is None:
+        return True
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     runtime: MobiusRuntimeData | None = getattr(entry, "runtime_data", None)

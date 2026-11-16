@@ -98,7 +98,7 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
     """Persistent setpoint of the active constant-speed block, not live RPM."""
 
     _attr_has_entity_name = True
-    _attr_name = "Konstantleistung (aktueller Zeitplanblock)"
+    _attr_name = "Konstantleistung"
     _attr_native_min_value = 1
     _attr_native_max_value = 100
     _attr_native_step = 1
@@ -117,6 +117,8 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
     @property
     def native_value(self):
         data = self.coordinator.data or {}
+        if data.get("operation_state") == "LiveDemo":
+            return (data.get("telemetry") or {}).get("speed_percent")
         if data.get("current_pump_mode") != "ConstantSpeed":
             return None
         value = data.get("current_pump_params", {}).get("MaxSpeed")
@@ -125,7 +127,7 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
     @property
     def extra_state_attributes(self):
         return {"verification": self._verification,
-                "writes_to": "Schedule1: active ConstantSpeed block",
+                "writes_to": "LiveDemo: 407; Schedule: active ConstantSpeed block",
                 "backup_storage": f"vectra_studio.schedule_backup_{self._serial}"}
 
     async def async_set_native_value(self, value):
@@ -140,18 +142,18 @@ class VectraConstantSpeedNumber(CoordinatorEntity[MobiusDeviceCoordinator], Numb
                 raw = await async_run_on_device(
                     self.coordinator, lambda d: set_constant_percent(d, value, backup, now.hour * 60 + now.minute),
                     f"MaxSpeed={value!r}% on {self._serial}")
-                self._verification = "schedule_verified_live_pending"
+                self._verification = "command_accepted_motor_pending"
                 for attempt in range(5):
                     await self.coordinator.async_request_refresh()
                     data = self.coordinator.data or {}
                     speed = (data.get("telemetry") or {}).get("speed_percent")
-                    if (self.coordinator.last_update_success and data.get("operation_state") == "Schedule"
+                    if (self.coordinator.last_update_success and data.get("operation_state") in ("Schedule", "LiveDemo")
                             and speed is not None and abs(speed - raw / 10) <= 1):
-                        self._verification = "schedule_and_motor_verified"
+                        self._verification = "command_and_motor_verified"
                         return
                     if attempt < 4:
                         await asyncio.sleep(2)
-                raise HomeAssistantError("MaxSpeed: schedule stored, but motor/state did not confirm the requested percentage; inspect Mobius")
+                raise HomeAssistantError("MaxSpeed: command accepted, but motor/state did not confirm requested percentage")
             except Exception as err:
                 self._verification = "failed_or_unconfirmed"
                 _LOGGER.error("Vectra %s MaxSpeed=%r%% failed: %s", self._serial, value, err)

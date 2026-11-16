@@ -19,6 +19,12 @@ from .entity import (
 )
 
 
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    """App access must survive unloading the per-entry switch platform."""
+    from .app_access import MobiusAppAccessSwitch
+    async_add_entities([MobiusAppAccessSwitch(hass)])
+
+
 class MobiusAdvancedFeatureSwitch(MobiusAdvancedFeatureEntity, SwitchEntity):
     """A boolean Advanced Features field."""
 
