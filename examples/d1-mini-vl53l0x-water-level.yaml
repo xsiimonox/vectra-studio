@@ -12,7 +12,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: xsiimonox.vectra_schachtwaechter
-    version: "0.7.1"
+    version: "0.7.2"
 
 esp8266:
   board: d1_mini
@@ -38,8 +38,10 @@ captive_portal:
 improv_serial:
 
 i2c:
-  sda: D2
-  scl: D1
+  # Wiring used by the Vectra Schachtwächter:
+  # VL53L0X SDA -> D3 / GPIO0, SCL -> D4 / GPIO2.
+  sda: D3
+  scl: D4
   scan: true
 
 # Initial value for browser-flashed devices. Once Home Assistant has adopted

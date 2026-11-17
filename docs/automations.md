@@ -64,36 +64,37 @@ eintragen. Danach erscheint das Gerät in Home Assistant zur Übernahme als
 
 ### VL53L0X an den D1 mini anschließen
 
-Die ESPHome-Vorlage verwendet den Standard-I²C-Bus des Wemos D1 mini. Vor dem
-Einbau zunächst mit kurzen Kabeln auf dem Tisch testen:
+Die ESPHome-Vorlage ist auf folgende Anschlussbelegung des Wemos D1 mini
+eingestellt. Vor dem Einbau zunächst mit kurzen Kabeln auf dem Tisch testen:
 
 | D1 mini | VL53L0X-Breakout | Funktion |
 | --- | --- | --- |
-| `3V3` | `VIN` oder `VCC` | 3,3-V-Versorgung |
+| `5V` | `VIN` | Versorgung des VL53L0X-Breakouts |
 | `G` | `GND` | gemeinsame Masse |
-| `D1` / GPIO5 | `SCL` | I²C-Takt |
-| `D2` / GPIO4 | `SDA` | I²C-Daten |
+| `D4` / GPIO2 | `SCL` | I²C-Takt |
+| `D3` / GPIO0 | `SDA` | I²C-Daten |
 | nicht anschließen | `XSHUT` | optionaler Abschalt-Pin |
 | nicht anschließen | `GPIO1` / `INT` | optionaler Interrupt-Pin |
 
 ```text
 Wemos D1 mini                    VL53L0X
 ─────────────                    ───────
-3V3  ──────────────────────────  VIN / VCC
+5V   ──────────────────────────  VIN
 G    ──────────────────────────  GND
-D1   ──────────────────────────  SCL
-D2   ──────────────────────────  SDA
+D4   ──────────────────────────  SCL
+D3   ──────────────────────────  SDA
 ```
 
-Nur Breakouts verwenden, deren Versorgungseingang ausdrücklich 3,3 V verträgt
-(typisch: `VIN` oder `VCC`). Ein Anschluss mit der Bezeichnung **`2V8`** ist
-kein 3,3-V-Eingang und darf nicht direkt mit dem D1 mini verbunden werden.
-`5V` am D1 mini nicht verwenden, sofern das konkrete Breakout nicht
-ausdrücklich eine Pegelwandlung für SDA/SCL besitzt. Die I²C-Leitungen möglichst
-kürzer als etwa 20 cm halten und gemeinsam mit GND führen.
+Diese Verdrahtung setzt ein VL53L0X-**Breakout** voraus, dessen Anschluss
+`VIN` ausdrücklich 5 V akzeptiert (mit Spannungsregler und I²C-Pegelwandlung).
+Ein nackter Sensor oder ein Anschluss mit der Bezeichnung **`2V8`** darf nicht
+an `5V` angeschlossen werden. `D3` und `D4` sind Boot-Pins: Falls der D1 mini
+nach dem Einschalten nicht startet, zunächst die Pull-ups auf dem verwendeten
+Breakout und die Verdrahtung prüfen. Die I²C-Leitungen möglichst kürzer als
+etwa 20 cm halten und gemeinsam mit GND führen.
 
 Nach dem Flashen im ESPHome-Protokoll prüfen, ob der I²C-Scan die Adresse
-`0x29` meldet. Fehlt sie, zuerst SDA und SCL tauschen sowie 3V3/GND prüfen.
+`0x29` meldet. Fehlt sie, zuerst SDA und SCL tauschen sowie 5V/GND prüfen.
 Der Sensor wird oberhalb des Schachts senkrecht nach unten montiert; das
 Spritzschutzfenster muss vor der Kalibrierung bereits montiert sein.
 

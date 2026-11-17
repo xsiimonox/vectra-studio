@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.7.2
+
+- ESPHome-Beispiel und Anschlussanleitung auf die Verdrahtung `VIN` → `5V`,
+  `GND` → `GND`, `SCL` → `D4` und `SDA` → `D3` aktualisiert. Die Anleitung
+  nennt die Voraussetzung eines 5-V-tauglichen VL53L0X-Breakouts sowie den
+  Hinweis zu den Boot-Pins D3/D4.
+
 ## 0.7.1
 
 - GitHub-Pages-Browser-Flasher für den Vectra Schachtwächter mit ESP Web Tools.
