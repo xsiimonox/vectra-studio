@@ -12,7 +12,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: xsiimonox.vectra_schachtwaechter
-    version: "0.7.0"
+    version: "0.7.1"
 
 esp8266:
   board: d1_mini
@@ -34,10 +34,27 @@ wifi:
 
 captive_portal:
 
+# Enables ESP Web Tools to offer Wi-Fi setup immediately after browser flashing.
+improv_serial:
+
 i2c:
   sda: D2
   scl: D1
   scan: true
+
+# Initial value for browser-flashed devices. Once Home Assistant has adopted
+# the ESP, set this number to the measured lens-to-dry-bottom distance.
+number:
+  - platform: template
+    id: shaft_empty_distance
+    name: "Leerabstand"
+    unit_of_measurement: cm
+    min_value: 1
+    max_value: 100
+    step: 0.1
+    initial_value: ${empty_distance_cm}
+    restore_value: true
+    optimistic: true
 
 sensor:
   - platform: vl53l0x
@@ -70,6 +87,6 @@ sensor:
     update_interval: 5s
     lambda: |-
       if (isnan(id(shaft_distance).state)) return NAN;
-      const float level = ${empty_distance_cm} - id(shaft_distance).state;
+      const float level = id(shaft_empty_distance).state - id(shaft_distance).state;
       if (level < 0.0f || level > (${shaft_height_cm} + 1.0f)) return NAN;
       return std::min((float) ${shaft_height_cm}, level);

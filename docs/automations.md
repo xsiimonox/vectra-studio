@@ -37,6 +37,17 @@ Vor dem Flashen `empty_distance_cm` mit montiertem Spritzschutz kalibrieren.
 
 ### D1 mini per USB flashen
 
+#### Direkt im Browser
+
+Den D1 mini per Daten-USB-Kabel verbinden und den
+[Vectra-Schachtwächter-Browser-Flasher](https://xsiimonox.github.io/vectra-studio/)
+in Chrome oder Edge öffnen. Nach dem Klick auf **Connect** den seriellen Port
+auswählen. ESP Web Tools installiert die Firmware und bietet anschließend die
+WLAN-Einrichtung an. Dieser Vorgang löscht die bestehende Firmware des D1 mini.
+Nach der Übernahme in Home Assistant die Number-Entität **„Leerabstand“** auf
+den gemessenen Abstand von der VL53L0X-Linse bis zum trockenen Schachtboden
+setzen. Damit wird der Wasserstand ohne erneutes Flashen kalibriert.
+
 Das Skript [`tools/flash-vl53l0x-d1-mini.sh`](../tools/flash-vl53l0x-d1-mini.sh)
 benötigt die ESPHome-CLI und den seriellen Port des D1 mini:
 

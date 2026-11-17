@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vectra Schachtwächter – Browser-Flasher</title>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #0b1720; color: #e8f3f4; }
+      main { max-width: 680px; margin: 8vh auto; padding: 32px; }
+      .card { background: #122530; border: 1px solid #29414d; border-radius: 18px; padding: 28px; }
+      h1 { margin-top: 0; } p, li { color: #c0d2d7; line-height: 1.55; }
+      ol { padding-left: 24px; } code { color: #7be3d9; }
+      esp-web-install-button { --esp-tools-button-color: #23b8a7; --esp-tools-button-text-color: #082a2d; }
+      .note { margin-top: 24px; font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <h1>Vectra Schachtwächter</h1>
+        <p>Installiert die ESPHome-Firmware für einen Wemos D1 mini mit VL53L0X direkt per USB.</p>
+        <ol>
+          <li>D1 mini per Daten-USB-Kabel anschließen.</li>
+          <li>Chrome, Edge oder einen anderen Browser mit Web Serial verwenden.</li>
+          <li>Auf <strong>Connect</strong> klicken und den seriellen Anschluss wählen.</li>
+          <li>Nach dem Flashen WLAN direkt im Browser einrichten. Falls dies übersprungen wird, steht das WLAN <code>Vectra Schachtwächter Fallback</code> bereit.</li>
+          <li>Das Gerät danach in Home Assistant als <strong>Vectra Schachtwächter</strong> übernehmen und dort <strong>Leerabstand</strong> auf den Abstand von Sensorlinse bis trockenem Schachtboden in cm setzen.</li>
+        </ol>
+        <esp-web-install-button manifest="firmware/manifest.json"></esp-web-install-button>
+        <p class="note">Achtung: Das Browser-Flashen löscht den D1 mini. Der Leerabstand wird danach direkt in Home Assistant kalibriert.</p>
+      </div>
+    </main>
+  </body>
+</html>

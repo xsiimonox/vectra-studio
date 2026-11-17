@@ -1,6 +1,8 @@
 # Vectra Studio
 
-**v0.7.0:** Abgesicherte Wasserstandsregelung für einen externen
+**v0.7.1:** Browser-Flasher für den **Vectra Schachtwächter**: D1 mini per
+USB verbinden, Firmware direkt in Chrome oder Edge installieren und danach in
+Home Assistant kalibrieren. **v0.7.0:** Abgesicherte Wasserstandsregelung für einen externen
 Home-Assistant-Sensor: Totzone, Bestätigung mehrerer Messwerte, kleine
 Leistungsschritte, hydraulische Wartezeit und automatische Sperre bei Pause,
 Szene, Stillstand oder alten Messwerten. Eine ESPHome-Vorlage für D1 mini und
@@ -10,6 +12,9 @@ Das enthaltene USB-[Flash-Skript](tools/flash-vl53l0x-d1-mini.sh) provisioniert
 den **Vectra Schachtwächter** (D1 mini) ohne WLAN-Zugangsdaten im Repository.
 Die [Anschlussbelegung für VL53L0X und D1 mini](docs/automations.md#vl53l0x-an-den-d1-mini-anschließen)
 ist ebenfalls dokumentiert.
+Über den [Browser-Flasher](https://xsiimonox.github.io/vectra-studio/) lässt
+sich die Firmware ohne lokale ESPHome-Installation direkt per USB installieren;
+der Leerabstand wird anschließend als Number-Entität in Home Assistant kalibriert.
 
 Neu in **v0.5.0**: Schalter **Für Mobius-App freigeben** zum Trennen und
 Wiederverbinden der HA-Bluetooth-Anbindung sowie M2-Live-Konstantleistung auf

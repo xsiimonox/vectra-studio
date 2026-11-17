@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.7.1
+
+- GitHub-Pages-Browser-Flasher für den Vectra Schachtwächter mit ESP Web Tools.
+  Die zugehörige GitHub Action erstellt die ESP8266-Firmware und das Manifest
+  auf jedem relevanten Push automatisch.
+- Nach Browser-Flash kann der Leerabstand direkt als wiederherstellbare
+  Home-Assistant-Number-Entität kalibriert werden; kein erneutes Kompilieren
+  nötig.
+
 ## 0.7.0
 
 - Neuer Dienst `vectra_studio.adjust_water_level` zur konservativen Regelung
