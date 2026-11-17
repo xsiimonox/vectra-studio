@@ -2,6 +2,7 @@
 
 import importlib.util
 from pathlib import Path
+import sys
 import unittest
 
 
@@ -9,6 +10,10 @@ _PATH = Path(__file__).resolve().parents[1] / "custom_components/vectra_studio/w
 _SPEC = importlib.util.spec_from_file_location("water_level_control", _PATH)
 module = importlib.util.module_from_spec(_SPEC)
 assert _SPEC.loader is not None
+# ``dataclasses`` resolves postponed annotations through ``sys.modules``.
+# Python 3.13 no longer tolerates executing a manually-created module before
+# registering it there (the normal import machinery registers it first).
+sys.modules[_SPEC.name] = module
 _SPEC.loader.exec_module(module)
 
 
