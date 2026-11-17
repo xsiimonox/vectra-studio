@@ -48,6 +48,20 @@ Nach der Übernahme in Home Assistant die Number-Entität **„Leerabstand“** 
 den gemessenen Abstand von der VL53L0X-Linse bis zum trockenen Schachtboden
 setzen. Damit wird der Wasserstand ohne erneutes Flashen kalibriert.
 
+### Messintervall und Beruhigung der Wasseroberfläche
+
+Der Schachtwächter misst intern jede Sekunde, veröffentlicht jedoch nur im
+einstellbaren **„Messintervall“** einen neuen Wert. Die Entität ist nach der
+Übernahme in Home Assistant verfügbar; der Standardwert beträgt **10 Sekunden**
+und kann zwischen 2 und 60 Sekunden liegen. Für die Pumpenregelung sind 10 bis
+20 Sekunden sinnvoll, da das Wassersystem ohnehin träge reagiert.
+
+Vor der Veröffentlichung werden Ausreißer über einen Median aus neun Messungen
+entfernt und die verbleibenden Werte über 21 Sekunden gemittelt. Kleine Wellen,
+Luftblasen und Tropfen führen dadurch nicht zu Sprüngen der Entitäten
+**„Sensorabstand“** und **„Wasserstand“**. Echte, anhaltende
+Wasserstandsänderungen bleiben dagegen sichtbar.
+
 Das Skript [`tools/flash-vl53l0x-d1-mini.sh`](../tools/flash-vl53l0x-d1-mini.sh)
 benötigt die ESPHome-CLI und den seriellen Port des D1 mini:
 

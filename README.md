@@ -1,6 +1,7 @@
 # Vectra Studio
 
-**v0.7.2:** Anschlussbelegung des **Vectra Schachtwächters** auf `5V`/`GND`,
+**v0.7.3:** Einstellbares Messintervall und robuste Oberflächenglättung für den
+**Vectra Schachtwächter**. **v0.7.2:** Anschlussbelegung des **Vectra Schachtwächters** auf `5V`/`GND`,
 `D4` (SCL) und `D3` (SDA) aktualisiert. **v0.7.1:** Browser-Flasher für den **Vectra Schachtwächter**: D1 mini per
 USB verbinden, Firmware direkt in Chrome oder Edge installieren und danach in
 Home Assistant kalibrieren. **v0.7.0:** Abgesicherte Wasserstandsregelung für einen externen

@@ -12,7 +12,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: xsiimonox.vectra_schachtwaechter
-    version: "0.7.2"
+    version: "0.7.3"
 
 esp8266:
   board: d1_mini
@@ -44,8 +44,8 @@ i2c:
   scl: D4
   scan: true
 
-# Initial value for browser-flashed devices. Once Home Assistant has adopted
-# the ESP, set this number to the measured lens-to-dry-bottom distance.
+# The VL53L0X is sampled every second for filtering. These two values can be
+# changed from Home Assistant without reflashing the ESP.
 number:
   - platform: template
     id: shaft_empty_distance
@@ -58,26 +58,64 @@ number:
     restore_value: true
     optimistic: true
 
+  - platform: template
+    id: shaft_measurement_interval
+    name: "Messintervall"
+    unit_of_measurement: s
+    device_class: duration
+    min_value: 2
+    max_value: 60
+    step: 1
+    initial_value: 10
+    restore_value: true
+    optimistic: true
+
+globals:
+  - id: shaft_last_published_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
 sensor:
   - platform: vl53l0x
-    id: shaft_distance
-    name: "Sensorabstand"
+    id: shaft_distance_filtered
+    internal: true
     address: 0x29
     update_interval: 1s
-    unit_of_measurement: cm
-    accuracy_decimals: 2
     filters:
       # ESPHome's VL53L0X component reports metres.
       - multiply: 100.0
       # Remove isolated reflections from ripples, bubbles and droplets.
       - median:
-          window_size: 7
+          window_size: 9
           send_every: 1
           send_first_at: 1
-      # Slow low-pass filter: about 15 seconds of history, sent every 5 s.
+      # A 21-second average removes the regular up/down movement of the
+      # water surface while retaining real, sustained level changes.
       - sliding_window_moving_average:
-          window_size: 15
-          send_every: 5
+          window_size: 21
+          send_every: 1
+          send_first_at: 1
+    on_value:
+      then:
+        - lambda: |-
+            if (isnan(x)) return;
+            const uint32_t now = millis();
+            const uint32_t interval_ms = (uint32_t) (id(shaft_measurement_interval).state * 1000.0f);
+            if (id(shaft_last_published_ms) == 0 || now - id(shaft_last_published_ms) >= interval_ms) {
+              id(shaft_last_published_ms) = now;
+              id(shaft_distance).publish_state(x);
+              id(shaft_water_level).update();
+            }
+
+  - platform: template
+    id: shaft_distance
+    name: "Sensorabstand"
+    unit_of_measurement: cm
+    device_class: distance
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: never
 
   - platform: template
     id: shaft_water_level
@@ -86,7 +124,7 @@ sensor:
     device_class: distance
     state_class: measurement
     accuracy_decimals: 2
-    update_interval: 5s
+    update_interval: never
     lambda: |-
       if (isnan(id(shaft_distance).state)) return NAN;
       const float level = id(shaft_empty_distance).state - id(shaft_distance).state;

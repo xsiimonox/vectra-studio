@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.7.3
+
+- Neue wiederherstellbare Home-Assistant-Number **„Messintervall“** (2–60 s,
+  Standard 10 s). Der Sensor wird jede Sekunde gemessen, aber nur im gewählten
+  Intervall als Wasserstand veröffentlicht.
+- Oberflächenbewegung wird durch einen Median aus neun Proben und einen
+  gleitenden Mittelwert über 21 Sekunden zuverlässig geglättet.
+
 ## 0.7.2
 
 - ESPHome-Beispiel und Anschlussanleitung auf die Verdrahtung `VIN` → `5V`,
