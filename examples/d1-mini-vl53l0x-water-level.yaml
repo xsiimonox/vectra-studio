@@ -1,0 +1,72 @@
+# ESPHome example: Wemos D1 mini + VL53L0X for a 15 cm return chamber.
+# Measure sensor-to-bottom distance precisely and change empty_distance_cm.
+# The optical window/splash guard must already be fitted during calibration.
+substitutions:
+  device_name: vectra-schacht
+  friendly_name: Vectra Schacht
+  empty_distance_cm: "18.4"
+  shaft_height_cm: "15.0"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp8266:
+  board: d1_mini
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  # On first start, join the temporary access point below and use its
+  # captive portal to enter the local Wi-Fi credentials. This keeps network
+  # credentials out of the public flash image and Git repository.
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: "vectra-setup"
+
+captive_portal:
+
+i2c:
+  sda: D2
+  scl: D1
+  scan: true
+
+sensor:
+  - platform: vl53l0x
+    id: shaft_distance
+    name: "Schacht Sensorabstand"
+    address: 0x29
+    update_interval: 1s
+    unit_of_measurement: cm
+    accuracy_decimals: 2
+    filters:
+      # ESPHome's VL53L0X component reports metres.
+      - multiply: 100.0
+      # Remove isolated reflections from ripples, bubbles and droplets.
+      - median:
+          window_size: 7
+          send_every: 1
+          send_first_at: 4
+      # Slow low-pass filter: about 15 seconds of history, sent every 5 s.
+      - sliding_window_moving_average:
+          window_size: 15
+          send_every: 5
+
+  - platform: template
+    id: shaft_water_level
+    name: "Schacht Wasserstand"
+    unit_of_measurement: cm
+    device_class: distance
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: |-
+      if (isnan(id(shaft_distance).state)) return NAN;
+      const float level = ${empty_distance_cm} - id(shaft_distance).state;
+      if (level < 0.0f || level > (${shaft_height_cm} + 1.0f)) return NAN;
+      return std::min((float) ${shaft_height_cm}, level);

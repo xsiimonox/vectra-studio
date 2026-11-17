@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.7.0
+
+- Neuer Dienst `vectra_studio.adjust_water_level` zur konservativen Regelung
+  eines Rückförderschachts über einen externen Zentimeter-Sensor und die
+  vorhandene Vectra-Konstantleistungsentität.
+- Regelung mit Totzone, mehreren Bestätigungsmessungen, begrenzten ganzzahligen
+  Leistungsschritten, Min-/Max-Grenzen und hydraulischer Sperrzeit nach jedem
+  Stellschritt sowie nach Start oder Rückkehr aus Pause/Stillstand.
+- Keine Regelung in `Scene`, `OOB`, bei 0 % Motordrehzahl sowie bei ungültigen
+  oder veralteten Pumpen- und Wasserstandswerten. Entscheidungen erscheinen als
+  `vectra_studio_water_level_control`-Ereignisse.
+- Vollständige ESPHome-Beispielkonfiguration für D1 mini und VL53L0X mit
+  Median- und gleitender Mittelwertfilterung sowie Zentimeter-Kalibrierung.
+
 ## 0.6.0
 
 - Neue dunkle, responsive Studio-Oberfläche mit Leistungsring, getrennten

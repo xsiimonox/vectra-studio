@@ -1,9 +1,13 @@
 # Vectra Studio
 
-**v0.6.0:** Neues responsives Dashboard mit Ist-Leistungsring, Prozentregler,
-App-Freigabe und sichtbaren Entitäts-IDs. Pause und dauerhaftes Aus sind noch
-nicht funktionsfähig; die Oberfläche kennzeichnet sie als deaktivierte Vorschau.
-[Automationen und verbleibende Voraussetzungen](docs/automations.md).
+**v0.7.0:** Abgesicherte Wasserstandsregelung für einen externen
+Home-Assistant-Sensor: Totzone, Bestätigung mehrerer Messwerte, kleine
+Leistungsschritte, hydraulische Wartezeit und automatische Sperre bei Pause,
+Szene, Stillstand oder alten Messwerten. Eine ESPHome-Vorlage für D1 mini und
+VL53L0X ist enthalten. [Einrichtung und Automation](docs/automations.md).
+
+Das enthaltene USB-[Flash-Skript](tools/flash-vl53l0x-d1-mini.sh) provisioniert
+einen D1 mini ohne WLAN-Zugangsdaten im Repository.
 
 Neu in **v0.5.0**: Schalter **Für Mobius-App freigeben** zum Trennen und
 Wiederverbinden der HA-Bluetooth-Anbindung sowie M2-Live-Konstantleistung auf

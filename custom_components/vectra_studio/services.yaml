@@ -51,3 +51,133 @@ set_schedule_intensity:
           min: 0
           max: 100
           unit_of_measurement: "%"
+
+adjust_water_level:
+  name: Schacht-Wasserstand nachregeln
+  description: >-
+    Prüft genau einen gefilterten Wasserstandswert und verändert die
+    Konstantleistung höchstens um einen kleinen Schritt. Während Pause,
+    Szene, Pumpenstillstand, ungültigen Messwerten und der hydraulischen
+    Wartezeit wird nichts verändert. Wiederholt über eine Automation aufrufen.
+  fields:
+    level_sensor:
+      name: Wasserstandssensor
+      description: Gefilterter tatsächlicher Wasserstand in Zentimetern.
+      required: true
+      selector:
+        entity:
+          domain: sensor
+    power_entity:
+      name: Vectra-Konstantleistung
+      description: Die Konstantleistungs-Number-Entität der Vectra-Pumpe.
+      required: true
+      selector:
+        entity:
+          domain: number
+          integration: vectra_studio
+    operation_state_sensor:
+      name: Betriebszustand
+      description: Vectra-Sensor mit Schedule, LiveDemo, Scene oder OOB.
+      required: true
+      selector:
+        entity:
+          domain: sensor
+          integration: vectra_studio
+    motor_speed_sensor:
+      name: Ist-Leistung
+      description: Vectra-Motordrehzahl in Prozent; 0 % sperrt die Regelung.
+      required: true
+      selector:
+        entity:
+          domain: sensor
+          integration: vectra_studio
+    target_cm:
+      name: Soll-Wasserstand
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: cm
+    deadband_cm:
+      name: Totzone
+      description: Innerhalb dieser Abweichung erfolgt keine Änderung.
+      default: 0.3
+      selector:
+        number:
+          min: 0.05
+          max: 5
+          step: 0.05
+          unit_of_measurement: cm
+    step_percent:
+      name: Leistungsschritt
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          unit_of_measurement: "%"
+    minimum_percent:
+      name: Mindestleistung
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    maximum_percent:
+      name: Höchstleistung
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    settle_seconds:
+      name: Hydraulische Wartezeit
+      description: Nach einer Leistungsänderung werden Wasserbewegungen so lange ignoriert.
+      default: 120
+      selector:
+        number:
+          min: 10
+          max: 3600
+          step: 10
+          unit_of_measurement: s
+    confirmations:
+      name: Bestätigungen
+      description: So viele aufeinanderfolgende Abweichungen sind vor einer Änderung nötig.
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 20
+          step: 1
+    higher_power_lowers_level:
+      name: Mehr Leistung senkt den Schachtstand
+      description: Für typische Rückförderschächte aktiviert lassen; andernfalls deaktivieren.
+      default: true
+      selector:
+        boolean:
+    max_sample_age_seconds:
+      name: Maximales Messwertalter
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 600
+          step: 5
+          unit_of_measurement: s
+    max_pump_state_age_seconds:
+      name: Maximales Alter des Pumpenzustands
+      description: Verhindert Änderungen mit alten Werten nach Verbindungsverlust oder Ausschalten.
+      default: 90
+      selector:
+        number:
+          min: 30
+          max: 600
+          step: 10
+          unit_of_measurement: s

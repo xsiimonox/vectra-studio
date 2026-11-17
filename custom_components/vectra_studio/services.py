@@ -7,12 +7,14 @@ device and every light in its schedule group.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Awaitable, Callable
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.util import dt as dt_util
 
 from mobius import (
     min_schedule_capacity, light_schedule_from_dict, pump_schedule_from_dict, primitive_type_from_name, support_tier,
@@ -23,6 +25,7 @@ from .const import DOMAIN
 from .coordinator import MobiusDeviceCoordinator
 from .gateway_registry import params_with_master
 from .websocket_api import _resolve_member, ScheduleGroupError
+from .water_level_control import WaterLevelController, WaterLevelSettings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +43,26 @@ SERVICE_SET_SCHEDULE_INTENSITY = "set_schedule_intensity"
 SET_SCHEDULE_INTENSITY_SCHEMA = vol.Schema({
     vol.Required("device_id"): cv.string,
     vol.Required("intensity"): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+})
+
+SERVICE_ADJUST_WATER_LEVEL = "adjust_water_level"
+WATER_LEVEL_EVENT = f"{DOMAIN}_water_level_control"
+
+ADJUST_WATER_LEVEL_SCHEMA = vol.Schema({
+    vol.Required("level_sensor"): cv.entity_id,
+    vol.Required("power_entity"): cv.entity_id,
+    vol.Required("operation_state_sensor"): cv.entity_id,
+    vol.Required("motor_speed_sensor"): cv.entity_id,
+    vol.Required("target_cm"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1000)),
+    vol.Optional("deadband_cm", default=0.3): vol.All(vol.Coerce(float), vol.Range(min=0.05, max=5)),
+    vol.Optional("step_percent", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+    vol.Optional("minimum_percent", default=10): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional("maximum_percent", default=100): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional("settle_seconds", default=120): vol.All(vol.Coerce(float), vol.Range(min=10, max=3600)),
+    vol.Optional("confirmations", default=3): vol.All(vol.Coerce(int), vol.Range(min=1, max=20)),
+    vol.Optional("higher_power_lowers_level", default=True): cv.boolean,
+    vol.Optional("max_sample_age_seconds", default=30): vol.All(vol.Coerce(float), vol.Range(min=5, max=600)),
+    vol.Optional("max_pump_state_age_seconds", default=90): vol.All(vol.Coerce(float), vol.Range(min=30, max=600)),
 })
 
 
@@ -229,6 +252,136 @@ async def async_handle_set_schedule_intensity(hass: HomeAssistant, call: Service
     await _write_to_members(members, lambda _serial, d: d.set_schedule_intensity(fraction, which=1), "Set intensity on")
 
 
+def _water_level_controllers(hass: HomeAssistant) -> dict[str, WaterLevelController]:
+    """One persistent confirmation/settling state per controlled number."""
+    return hass.data.setdefault(DOMAIN, {}).setdefault("water_level_controllers", {})
+
+
+def _finite_state_number(hass: HomeAssistant, entity_id: str) -> float | None:
+    state = hass.states.get(entity_id)
+    if state is None or state.state in ("unknown", "unavailable"):
+        return None
+    try:
+        value = float(state.state)
+    except (TypeError, ValueError):
+        return None
+    return value if value == value and value not in (float("inf"), float("-inf")) else None
+
+
+def _state_reported_at(state):
+    """HA 2024.3+ tracks identical reports separately from value changes."""
+    return getattr(state, "last_reported", state.last_updated)
+
+
+def _fire_water_level_event(hass: HomeAssistant, call: ServiceCall, **data: Any) -> None:
+    """Expose every skip/change decision for HA traces and diagnostics."""
+    hass.bus.async_fire(
+        WATER_LEVEL_EVENT,
+        {"power_entity": call.data["power_entity"], "level_sensor": call.data["level_sensor"], **data},
+        context=call.context,
+    )
+
+
+async def async_handle_adjust_water_level(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Evaluate one sample and, when safe, request one small power step.
+
+    Call this service periodically. Confirmation counts and the hydraulic
+    settling lock live in the integration and are keyed by the target number.
+    """
+    data = call.data
+    controller = _water_level_controllers(hass).setdefault(data["power_entity"], WaterLevelController())
+
+    operation = hass.states.get(data["operation_state_sensor"])
+    operation_state = operation.state if operation is not None else "unavailable"
+    motor_state = hass.states.get(data["motor_speed_sensor"])
+    motor_speed = _finite_state_number(hass, data["motor_speed_sensor"])
+
+    # Pause/feed/scene and a stopped motor intentionally change the chamber
+    # level. Never let that expected movement build control confirmations.
+    if operation_state not in ("Schedule", "LiveDemo"):
+        controller.record_suspension()
+        _fire_water_level_event(hass, call, reason="pump_paused_or_non_running_state", operation_state=operation_state)
+        return
+    now = dt_util.now()
+    if (operation is None or motor_state is None
+            or (now - _state_reported_at(operation)).total_seconds() > data["max_pump_state_age_seconds"]
+            or (now - _state_reported_at(motor_state)).total_seconds() > data["max_pump_state_age_seconds"]):
+        controller.record_suspension()
+        _fire_water_level_event(hass, call, reason="stale_pump_state", operation_state=operation_state)
+        return
+    if motor_speed is None or motor_speed <= 0.5:
+        controller.record_suspension()
+        _fire_water_level_event(hass, call, reason="pump_stopped_or_unknown", operation_state=operation_state)
+        return
+
+    level_state = hass.states.get(data["level_sensor"])
+    level_cm = _finite_state_number(hass, data["level_sensor"])
+    if level_state is None or level_cm is None:
+        controller.reset_confirmation()
+        _fire_water_level_event(hass, call, reason="invalid_level_sensor")
+        return
+    sample_age = max(0.0, (now - _state_reported_at(level_state)).total_seconds())
+    if sample_age > data["max_sample_age_seconds"]:
+        controller.reset_confirmation()
+        _fire_water_level_event(hass, call, reason="stale_level_sensor", sample_age_seconds=round(sample_age, 1))
+        return
+
+    current_power = _finite_state_number(hass, data["power_entity"])
+    if current_power is None:
+        controller.reset_confirmation()
+        _fire_water_level_event(hass, call, reason="invalid_power_entity")
+        return
+
+    settings = WaterLevelSettings(
+        target_cm=data["target_cm"], deadband_cm=data["deadband_cm"],
+        step_percent=data["step_percent"], minimum_percent=data["minimum_percent"],
+        maximum_percent=data["maximum_percent"], settle_seconds=data["settle_seconds"],
+        confirmations=data["confirmations"],
+        higher_power_lowers_level=data["higher_power_lowers_level"],
+    )
+    try:
+        decision = controller.evaluate(
+            level_cm=level_cm, current_power_percent=current_power,
+            operation_state=operation_state, motor_speed_percent=motor_speed,
+            now_monotonic=time.monotonic(), settings=settings,
+        )
+    except ValueError as err:
+        raise HomeAssistantError(str(err)) from err
+
+    event = {
+        "level_cm": level_cm,
+        "target_cm": settings.target_cm,
+        "error_cm": decision.error_cm,
+        "current_power_percent": current_power,
+        "confirmation_count": decision.confirmation_count,
+        "operation_state": operation_state,
+        "motor_speed_percent": motor_speed,
+    }
+    if decision.new_power_percent is None:
+        _fire_water_level_event(hass, call, reason=decision.reason, **event)
+        return
+
+    try:
+        await hass.services.async_call(
+            "number", "set_value",
+            {"entity_id": data["power_entity"], "value": decision.new_power_percent},
+            blocking=True, context=call.context,
+        )
+    except Exception as err:
+        controller.reset_confirmation()
+        _fire_water_level_event(
+            hass, call, **event, reason="power_write_failed",
+            requested_power_percent=decision.new_power_percent,
+            error=str(err) or type(err).__name__,
+        )
+        raise
+    controller.record_successful_change(time.monotonic())
+    _fire_water_level_event(
+        hass, call, **event, reason="power_changed",
+        requested_power_percent=decision.new_power_percent,
+    )
+
+
 def async_register_services(hass: HomeAssistant) -> None:
     """Registers the services (called from async_setup())."""
     hass.services.async_register(
@@ -238,4 +391,8 @@ def async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, SERVICE_SET_SCHEDULE_INTENSITY, lambda call: async_handle_set_schedule_intensity(hass, call),
         schema=SET_SCHEDULE_INTENSITY_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_ADJUST_WATER_LEVEL, lambda call: async_handle_adjust_water_level(hass, call),
+        schema=ADJUST_WATER_LEVEL_SCHEMA,
     )
