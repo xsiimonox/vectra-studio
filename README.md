@@ -8,6 +8,8 @@ VL53L0X ist enthalten. [Einrichtung und Automation](docs/automations.md).
 
 Das enthaltene USB-[Flash-Skript](tools/flash-vl53l0x-d1-mini.sh) provisioniert
 einen D1 mini ohne WLAN-Zugangsdaten im Repository.
+Die [Anschlussbelegung für VL53L0X und D1 mini](docs/automations.md#vl53l0x-an-den-d1-mini-anschließen)
+ist ebenfalls dokumentiert.
 
 Neu in **v0.5.0**: Schalter **Für Mobius-App freigeben** zum Trennen und
 Wiederverbinden der HA-Bluetooth-Anbindung sowie M2-Live-Konstantleistung auf

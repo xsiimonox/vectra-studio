@@ -49,6 +49,41 @@ Nach dem Flashen mit dem WLAN **„Vectra Schacht Fallback“** verbinden
 (Kennwort `vectra-setup`), `http://192.168.4.1` öffnen und das eigene WLAN
 eintragen. Danach erscheint das Gerät in Home Assistant zur Übernahme.
 
+### VL53L0X an den D1 mini anschließen
+
+Die ESPHome-Vorlage verwendet den Standard-I²C-Bus des Wemos D1 mini. Vor dem
+Einbau zunächst mit kurzen Kabeln auf dem Tisch testen:
+
+| D1 mini | VL53L0X-Breakout | Funktion |
+| --- | --- | --- |
+| `3V3` | `VIN` oder `VCC` | 3,3-V-Versorgung |
+| `G` | `GND` | gemeinsame Masse |
+| `D1` / GPIO5 | `SCL` | I²C-Takt |
+| `D2` / GPIO4 | `SDA` | I²C-Daten |
+| nicht anschließen | `XSHUT` | optionaler Abschalt-Pin |
+| nicht anschließen | `GPIO1` / `INT` | optionaler Interrupt-Pin |
+
+```text
+Wemos D1 mini                    VL53L0X
+─────────────                    ───────
+3V3  ──────────────────────────  VIN / VCC
+G    ──────────────────────────  GND
+D1   ──────────────────────────  SCL
+D2   ──────────────────────────  SDA
+```
+
+Nur Breakouts verwenden, deren Versorgungseingang ausdrücklich 3,3 V verträgt
+(typisch: `VIN` oder `VCC`). Ein Anschluss mit der Bezeichnung **`2V8`** ist
+kein 3,3-V-Eingang und darf nicht direkt mit dem D1 mini verbunden werden.
+`5V` am D1 mini nicht verwenden, sofern das konkrete Breakout nicht
+ausdrücklich eine Pegelwandlung für SDA/SCL besitzt. Die I²C-Leitungen möglichst
+kürzer als etwa 20 cm halten und gemeinsam mit GND führen.
+
+Nach dem Flashen im ESPHome-Protokoll prüfen, ob der I²C-Scan die Adresse
+`0x29` meldet. Fehlt sie, zuerst SDA und SCL tauschen sowie 3V3/GND prüfen.
+Der Sensor wird oberhalb des Schachts senkrecht nach unten montiert; das
+Spritzschutzfenster muss vor der Kalibrierung bereits montiert sein.
+
 Die Integration stellt `vectra_studio.adjust_water_level` bereit. Der Dienst
 wertet pro Aufruf genau einen Messwert aus. Erst nach drei gleichgerichteten
 Abweichungen erfolgt ein kleiner Schritt; danach sperrt `settle_seconds` weitere
