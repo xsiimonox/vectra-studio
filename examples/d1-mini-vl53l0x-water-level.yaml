@@ -71,7 +71,7 @@ sensor:
       - median:
           window_size: 7
           send_every: 1
-          send_first_at: 4
+          send_first_at: 1
       # Slow low-pass filter: about 15 seconds of history, sent every 5 s.
       - sliding_window_moving_average:
           window_size: 15
