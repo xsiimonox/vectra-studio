@@ -45,9 +45,11 @@ pipx install esphome
 ./tools/flash-vl53l0x-d1-mini.sh /dev/cu.usbserial-0001 18.4
 ```
 
-Nach dem Flashen mit dem WLAN **„Vectra Schacht Fallback“** verbinden
+Nach dem Flashen mit dem WLAN **„Vectra Schachtwächter Fallback“** verbinden
 (Kennwort `vectra-setup`), `http://192.168.4.1` öffnen und das eigene WLAN
-eintragen. Danach erscheint das Gerät in Home Assistant zur Übernahme.
+eintragen. Danach erscheint das Gerät in Home Assistant zur Übernahme als
+**„Vectra Schachtwächter“**; die Entitäten heißen dort **„Wasserstand“** und
+**„Sensorabstand“**.
 
 ### VL53L0X an den D1 mini anschließen
 
@@ -102,7 +104,7 @@ triggers:
 actions:
   - action: vectra_studio.adjust_water_level
     data:
-      level_sensor: sensor.vectra_schacht_schacht_wasserstand
+      level_sensor: sensor.vectra_schachtwachter_wasserstand
       power_entity: number.vectra_m2_konstantleistung
       operation_state_sensor: sensor.vectra_m2_betriebszustand
       motor_speed_sensor: sensor.vectra_m2_motordrehzahl

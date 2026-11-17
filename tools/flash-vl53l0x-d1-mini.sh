@@ -18,7 +18,7 @@ Example (Linux):
 
 EMPTY_DISTANCE_CM is the measured distance from the installed VL53L0X lens
 to the dry chamber bottom, with the final splash guard already installed.
-After flashing, join the Wi-Fi access point "Vectra Schacht Fallback"
+After flashing, join the Wi-Fi access point "Vectra Schachtwächter Fallback"
 (password: vectra-setup), open http://192.168.4.1 and enter your Wi-Fi.
 Then add the discovered ESPHome device to Home Assistant.
 EOF
