@@ -116,6 +116,24 @@ sie dauerhaft, kann SCL fest auf LOW hängen und der Sensor nicht mehr messen.
 Die I²C-Leitungen möglichst kürzer als etwa 20 cm halten und gemeinsam mit GND
 führen.
 
+#### Bauliche Alternative: D5 und D6
+
+Falls D1/D2 im Gehäuse ungünstig erreichbar sind, kann der I²C-Bus stattdessen
+über die ebenfalls unkritischen Pins `D5`/GPIO14 und `D6`/GPIO12 geführt
+werden. Dann gilt `SCL` → `D5` und `SDA` → `D6`; zusätzlich muss die
+ESPHome-Konfiguration passend geändert werden:
+
+```yaml
+i2c:
+  sda: D6
+  scl: D5
+  scan: true
+```
+
+`D3`/GPIO0 und `D4`/GPIO2 sind dafür keine Alternative, auch wenn sie baulich
+günstiger liegen. Nach der Änderung per USB oder OTA neu flashen und erst dann
+die Sensorleitungen umstecken.
+
 Nach dem Flashen im ESPHome-Protokoll prüfen, ob der I²C-Scan die Adresse
 `0x29` meldet. Fehlt sie, zuerst SDA und SCL tauschen sowie 5V/GND prüfen.
 Der Sensor wird oberhalb des Schachts senkrecht nach unten montiert; das
