@@ -62,6 +62,20 @@ Luftblasen und Tropfen führen dadurch nicht zu Sprüngen der Entitäten
 **„Sensorabstand“** und **„Wasserstand“**. Echte, anhaltende
 Wasserstandsänderungen bleiben dagegen sichtbar.
 
+### Firmware-Update und Sensorüberwachung
+
+Der Schachtwächter prüft alle sechs Stunden das veröffentlichte Vectra-Studio-
+Firmware-Manifest. Eine neuere Version erscheint in Home Assistant als
+**„Firmware Update“**. Die Installation erfolgt bewusst nicht automatisch:
+In der Update-Entität auf **Installieren** klicken; der ESP lädt das Update
+drahtlos und startet danach neu. Das Gerät muss dazu im WLAN erreichbar sein.
+
+Die Diagnose-Entität **„Sensor aktiv“** zeigt an, ob der VL53L0X in den
+vergangenen zwei Minuten Messwerte geliefert hat. Bleiben Messwerte aus,
+startet der Schachtwächter nach zwei Minuten einmal neu. Das behebt temporäre
+I²C- oder Sensoraussetzer, ersetzt aber keine Prüfung von Kabeln, Feuchtigkeit
+und Stromversorgung bei wiederkehrenden Fehlern.
+
 Das Skript [`tools/flash-vl53l0x-d1-mini.sh`](../tools/flash-vl53l0x-d1-mini.sh)
 benötigt die ESPHome-CLI und den seriellen Port des D1 mini:
 
@@ -85,8 +99,8 @@ eingestellt. Vor dem Einbau zunächst mit kurzen Kabeln auf dem Tisch testen:
 | --- | --- | --- |
 | `5V` | `VIN` | Versorgung des VL53L0X-Breakouts |
 | `G` | `GND` | gemeinsame Masse |
-| `D4` / GPIO2 | `SCL` | I²C-Takt |
-| `D3` / GPIO0 | `SDA` | I²C-Daten |
+| `D1` / GPIO5 | `SCL` | I²C-Takt |
+| `D2` / GPIO4 | `SDA` | I²C-Daten |
 | nicht anschließen | `XSHUT` | optionaler Abschalt-Pin |
 | nicht anschließen | `GPIO1` / `INT` | optionaler Interrupt-Pin |
 
@@ -95,17 +109,18 @@ Wemos D1 mini                    VL53L0X
 ─────────────                    ───────
 5V   ──────────────────────────  VIN
 G    ──────────────────────────  GND
-D4   ──────────────────────────  SCL
-D3   ──────────────────────────  SDA
+D1   ──────────────────────────  SCL
+D2   ──────────────────────────  SDA
 ```
 
 Diese Verdrahtung setzt ein VL53L0X-**Breakout** voraus, dessen Anschluss
 `VIN` ausdrücklich 5 V akzeptiert (mit Spannungsregler und I²C-Pegelwandlung).
 Ein nackter Sensor oder ein Anschluss mit der Bezeichnung **`2V8`** darf nicht
-an `5V` angeschlossen werden. `D3` und `D4` sind Boot-Pins: Falls der D1 mini
-nach dem Einschalten nicht startet, zunächst die Pull-ups auf dem verwendeten
-Breakout und die Verdrahtung prüfen. Die I²C-Leitungen möglichst kürzer als
-etwa 20 cm halten und gemeinsam mit GND führen.
+an `5V` angeschlossen werden. **D3 und D4 nicht für I²C verwenden:** Sie sind
+Boot-Pins; außerdem ist D4 mit der blauen LED des D1 mini verbunden. Leuchtet
+sie dauerhaft, kann SCL fest auf LOW hängen und der Sensor nicht mehr messen.
+Die I²C-Leitungen möglichst kürzer als etwa 20 cm halten und gemeinsam mit GND
+führen.
 
 Nach dem Flashen im ESPHome-Protokoll prüfen, ob der I²C-Scan die Adresse
 `0x29` meldet. Fehlt sie, zuerst SDA und SCL tauschen sowie 5V/GND prüfen.

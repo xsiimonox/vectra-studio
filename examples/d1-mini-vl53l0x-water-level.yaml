@@ -12,7 +12,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: xsiimonox.vectra_schachtwaechter
-    version: "0.7.3"
+    version: "0.7.4"
 
 esp8266:
   board: d1_mini
@@ -23,6 +23,19 @@ api:
 
 ota:
   - platform: esphome
+
+# Checks the published Vectra Studio manifest every six hours. A newer version
+# is shown as an Update entity in Home Assistant; installation remains manual.
+http_request:
+  useragent: vectra-schachtwaechter
+  timeout: 10s
+  watchdog_timeout: 15s
+
+update:
+  - platform: http_request
+    name: "Firmware Update"
+    source: https://xsiimonox.github.io/vectra-studio/firmware/manifest.json
+    update_interval: 6h
 
 wifi:
   # On first start, join the temporary access point below and use its
@@ -38,10 +51,10 @@ captive_portal:
 improv_serial:
 
 i2c:
-  # Wiring used by the Vectra Schachtwächter:
-  # VL53L0X SDA -> D3 / GPIO0, SCL -> D4 / GPIO2.
-  sda: D3
-  scl: D4
+  # Use the D1 mini's normal I²C pins. D4/GPIO2 drives the blue on-board LED
+  # and must not be used as SCL: a permanently lit LED indicates a stuck bus.
+  sda: D2
+  scl: D1
   scan: true
 
 # The VL53L0X is sampled every second for filtering. These two values can be
@@ -75,6 +88,10 @@ globals:
     type: uint32_t
     restore_value: false
     initial_value: '0'
+  - id: shaft_last_sensor_response_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
 
 sensor:
   - platform: vl53l0x
@@ -101,6 +118,7 @@ sensor:
         - lambda: |-
             if (isnan(x)) return;
             const uint32_t now = millis();
+            id(shaft_last_sensor_response_ms) = now;
             const uint32_t interval_ms = (uint32_t) (id(shaft_measurement_interval).state * 1000.0f);
             if (id(shaft_last_published_ms) == 0 || now - id(shaft_last_published_ms) >= interval_ms) {
               id(shaft_last_published_ms) = now;
@@ -130,3 +148,25 @@ sensor:
       const float level = id(shaft_empty_distance).state - id(shaft_distance).state;
       if (level < 0.0f || level > (${shaft_height_cm} + 1.0f)) return NAN;
       return std::min((float) ${shaft_height_cm}, level);
+
+binary_sensor:
+  - platform: template
+    id: shaft_sensor_healthy
+    name: "Sensor aktiv"
+    device_class: connectivity
+    entity_category: diagnostic
+
+# A locked I²C bus produces no new VL53L0X values. Report that state to Home
+# Assistant and reboot after two minutes so transient sensor lockups recover.
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          const uint32_t now = millis();
+          const bool healthy = id(shaft_last_sensor_response_ms) != 0 &&
+              now - id(shaft_last_sensor_response_ms) <= 120000;
+          id(shaft_sensor_healthy).publish_state(healthy);
+          if (now > 180000 && !healthy) {
+            ESP_LOGW("shaft_watchdog", "No VL53L0X response for two minutes; rebooting");
+            ESP.restart();
+          }
