@@ -62,13 +62,7 @@ Luftblasen und Tropfen führen dadurch nicht zu Sprüngen der Entitäten
 **„Sensorabstand“** und **„Wasserstand“**. Echte, anhaltende
 Wasserstandsänderungen bleiben dagegen sichtbar.
 
-### Firmware-Update und Sensorüberwachung
-
-Der Schachtwächter prüft alle sechs Stunden das veröffentlichte Vectra-Studio-
-Firmware-Manifest. Eine neuere Version erscheint in Home Assistant als
-**„Firmware Update“**. Die Installation erfolgt bewusst nicht automatisch:
-In der Update-Entität auf **Installieren** klicken; der ESP lädt das Update
-drahtlos und startet danach neu. Das Gerät muss dazu im WLAN erreichbar sein.
+### Sensorüberwachung
 
 Die Diagnose-Entität **„Sensor aktiv“** zeigt an, ob der VL53L0X in den
 vergangenen zwei Minuten Messwerte geliefert hat. Bleiben Messwerte aus,

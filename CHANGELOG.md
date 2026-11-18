@@ -2,9 +2,6 @@
 
 ## 0.7.4
 
-- Neue Update-Entität **„Firmware Update“** prüft alle sechs Stunden das
-  veröffentlichte GitHub-Pages-Manifest; Installation bleibt eine bewusste
-  Aktion in Home Assistant.
 - Neue Diagnose **„Sensor aktiv“** und Watchdog: Keine VL53L0X-Antwort für zwei
   Minuten markiert den Sensor als inaktiv und startet den ESP einmal neu.
 - I²C zurück auf die belastbaren D1/D2-Pins. D4 ist mit der blauen D1-mini-LED

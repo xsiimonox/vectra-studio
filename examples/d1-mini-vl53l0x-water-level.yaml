@@ -24,18 +24,6 @@ api:
 ota:
   - platform: esphome
 
-# Checks the published Vectra Studio manifest every six hours. A newer version
-# is shown as an Update entity in Home Assistant; installation remains manual.
-http_request:
-  useragent: vectra-schachtwaechter
-  timeout: 10s
-
-update:
-  - platform: http_request
-    name: "Firmware Update"
-    source: https://xsiimonox.github.io/vectra-studio/firmware/manifest.json
-    update_interval: 6h
-
 wifi:
   # On first start, join the temporary access point below and use its
   # captive portal to enter the local Wi-Fi credentials. This keeps network
