@@ -29,7 +29,6 @@ ota:
 http_request:
   useragent: vectra-schachtwaechter
   timeout: 10s
-  watchdog_timeout: 15s
 
 update:
   - platform: http_request
