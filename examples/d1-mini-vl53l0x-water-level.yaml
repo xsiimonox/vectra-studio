@@ -23,6 +23,7 @@ api:
 
 ota:
   - platform: esphome
+  - platform: http_request
 
 # The ESP8266 has no certificate store. The request is encrypted with HTTPS,
 # but GitHub Pages' certificate cannot be validated on this hardware.
