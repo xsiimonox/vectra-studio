@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.7.5
+
+- Lokales ESP-Webinterface mit manueller Firmwareprüfung und -installation
+  über das veröffentlichte Vectra-Studio-Manifest. Die Prüfung erfolgt zudem
+  alle sechs Stunden; ein Update wird niemals automatisch installiert.
+- ESP8266 kann das GitHub-Pages-Zertifikat nicht validieren. Die Entscheidung
+  für verschlüsselten Abruf ohne Zertifikatsprüfung wurde ausdrücklich
+  dokumentiert; Updates nur im vertrauenswürdigen lokalen Netzwerk auslösen.
+
 ## 0.7.4
 
 - Neue Diagnose **„Sensor aktiv“** und Watchdog: Keine VL53L0X-Antwort für zwei

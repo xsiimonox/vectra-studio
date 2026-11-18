@@ -12,7 +12,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: xsiimonox.vectra_schachtwaechter
-    version: "0.7.4"
+    version: "0.7.5"
 
 esp8266:
   board: d1_mini
@@ -23,6 +23,27 @@ api:
 
 ota:
   - platform: esphome
+
+# The ESP8266 has no certificate store. The request is encrypted with HTTPS,
+# but GitHub Pages' certificate cannot be validated on this hardware.
+http_request:
+  useragent: vectra-schachtwaechter
+  timeout: 10s
+  verify_ssl: false
+
+# Compares the installed project version with the published manifest every six
+# hours. The web interface and Home Assistant expose manual check/install
+# controls; an update is never installed automatically.
+update:
+  - platform: http_request
+    id: shaft_firmware_update
+    name: "Firmware Update"
+    source: https://xsiimonox.github.io/vectra-studio/firmware/manifest.json
+    update_interval: 6h
+
+web_server:
+  port: 80
+  version: 3
 
 wifi:
   # On first start, join the temporary access point below and use its
@@ -69,6 +90,22 @@ number:
     initial_value: 10
     restore_value: true
     optimistic: true
+
+button:
+  - platform: template
+    name: "Nach Firmware-Update suchen"
+    icon: mdi:update
+    entity_category: config
+    on_press:
+      - component.update: shaft_firmware_update
+
+  - platform: template
+    name: "Firmware-Update installieren"
+    icon: mdi:download
+    entity_category: config
+    on_press:
+      - update.perform:
+          id: shaft_firmware_update
 
 globals:
   - id: shaft_last_published_ms

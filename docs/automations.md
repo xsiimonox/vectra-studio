@@ -62,6 +62,24 @@ Luftblasen und Tropfen führen dadurch nicht zu Sprüngen der Entitäten
 **„Sensorabstand“** und **„Wasserstand“**. Echte, anhaltende
 Wasserstandsänderungen bleiben dagegen sichtbar.
 
+### Firmware im ESP-Webinterface aktualisieren
+
+Der Schachtwächter stellt im lokalen WLAN ein Webinterface bereit. Die Adresse
+lautet `http://vectra-schachtwaechter.local` oder die aktuelle IP-Adresse des
+Geräts. Dort sowie in Home Assistant stehen drei Entitäten bereit:
+
+- **„Firmware Update“** zeigt die installierte und verfügbare Version; sie
+  prüft automatisch alle sechs Stunden.
+- **„Nach Firmware-Update suchen“** startet eine Prüfung sofort.
+- **„Firmware-Update installieren“** lädt die gefundene Firmware und startet
+  den ESP danach neu.
+
+Die Installation erfolgt ausschließlich nach Klick auf die Schaltfläche; ein
+automatischer Firmware-Flash findet nicht statt. Der ESP8266 besitzt keinen
+Zertifikatsspeicher. Der Abruf erfolgt zwar verschlüsselt per HTTPS, kann das
+GitHub-Pages-Zertifikat aber nicht validieren. Deshalb das Update nur im
+vertrauenswürdigen eigenen Netzwerk und bewusst manuell auslösen.
+
 ### Sensorüberwachung
 
 Die Diagnose-Entität **„Sensor aktiv“** zeigt an, ob der VL53L0X in den
